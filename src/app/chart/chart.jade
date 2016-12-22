@@ -1,0 +1,93 @@
+.container
+.row.estilo-menu
+    ul.wrap.nav.container-chart
+      li
+        button.chart-class.icon-chart01.style-none &#xe900;
+      li
+        button.chart-class.icon-chart02.style-none &#xe901;
+      li
+        button.chart-class.icon-chart03.style-none &#xe902;
+      li
+        button.chart-class.icon-chart04.style-none &#xe903;
+      li
+        button.chart-class.icon-chart05.style-none &#xe904;
+      li
+        button.chart-class.icon-chart06.style-none &#xe905;
+      li
+        button.chart-class.icon-chart07.style-none &#xe906;
+      li
+        button.chart-class.icon-chart08.style-none &#xe907;
+      li
+        button.chart-class.icon-chart09.style-none &#xe908;
+      li
+        button.chart-class.icon-chart10.style-none &#xe909;
+
+.container 
+  p.des HISTOGRAMA 
+  //- img.img-responsive.hidden-xs-mt.banner(src="assets/images/chart.png")
+  //- img.img-responsive.visible-xs-mt.hidden-sm.banner(src="assets/images/chart2.png")
+  div
+    div(id="grafica-{{grafica}}" ng-show="$index+1 == chart.chartNumber" ng-repeat="grafica in chart.graficas")
+      h1 {{grafica}}
+  br
+  br
+
+
+  div.btn-center
+    button.btn.btn-primary2(type='submit') EDITAR EN JSFIDDLE
+  br
+  p.des DESCRIPCIÓN
+  p.linea-des
+  
+  p.descripcion Curabitur aliquet quam id dui posuere blandit. Curabitur arcu erat, accumsan id imperdiet et, porttitor at sem. Nulla quis lorem ut libero malesuada feugiat. Nulla porttitor accumsan tincidunt. Donec rutrum congue leo eget malesuada. Nulla quis lorem ut libero malesuada feugiat. Mauris blandit aliquet elit, eget tincidunt nibh pulvinar a.
+  div.nombre
+    p #histograma
+  div#coder
+  br
+  br
+  br
+
+.container
+
+footer
+  .container(style="padding: 0;")
+    .col-sm-2.estilo-footer
+      p CONTÁCTANOS
+      p.linea-footer _________
+      img.redes(src='assets/images/email.png', alt='Email')
+      span(style="padding-top: 10px;") info@dbox.com
+      br
+      img.redes(src='assets/images/twitter.png', alt='Twitter')
+      span(style="padding-top: 10px;") TWITTER
+      
+
+    .col-sm-2.estilo-footer
+      p PARTNERS
+      p.linea-footer _________
+      img(src='assets/images/logo-d4.png', alt='D4')
+      img.fixedheight(src='assets/images/logo-dc.png', alt='Data Civica')
+
+    .col-sm-2.estilo-footer
+      p DESARROLLO
+      p.linea-footer _________
+      img.mar-git(src='assets/images/logo-git.png', alt='Github')
+      a.decoration(href='https://github.com', title='Github') https://github.com
+
+ 
+
+    .col-sm-6.estilo-footer
+      p NEWSLETTER
+      p.linea-footer _________
+      .input-group
+        input.form-control(for='inputEmail3', placeholder="Email", aria-describedby='basic-addon2')
+        span#basic-addon2.input-group-addon NEWSLETTER
+
+  .container
+    .linea
+
+    p.copy © 2016 DBOX Todos los Derechos Reservados
+
+
+
+
+

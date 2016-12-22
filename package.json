@@ -1,7 +1,9 @@
 {
   "name": "dboxLibrary",
   "version": "0.0.0",
-  "dependencies": {},
+  "dependencies": {
+    "d3": "^4.3.0"
+  },
   "scripts": {
     "test": "gulp test"
   },
