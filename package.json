@@ -33,7 +33,7 @@
     "gulp-inject": "~3.0.0",
     "gulp-protractor": "~2.1.0",
     "gulp-sourcemaps": "~1.6.0",
-    "gulp-stylus": "~2.1.0",
+    "gulp-stylus": "^2.6.0",
     "gulp-angular-filesort": "~1.1.1",
     "gulp-consolidate": "~0.1.2",
     "jade": "~1.11.0",

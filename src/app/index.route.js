@@ -15,6 +15,13 @@
         controllerAs: 'main'
       })
 
+    .state('dev', {
+        url: '/dev',
+        templateUrl: 'app/dev/dev.html',
+        controller: 'devController',
+        controllerAs: 'dev'
+      })
+
     .state('chart', {
         url: '/chart/:chart_id',
         templateUrl: 'app/chart/chart.html',
@@ -22,7 +29,7 @@
         controllerAs: 'chart'
       });
 
-    $urlRouterProvider.otherwise('/');
+    $urlRouterProvider.otherwise('/dev');
   }
 
 })();
