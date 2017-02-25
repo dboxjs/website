@@ -29,7 +29,7 @@
         controllerAs: 'chart'
       });
 
-    $urlRouterProvider.otherwise('/dev');
+    $urlRouterProvider.otherwise('/');
   }
 
 })();

@@ -1,0 +1,3 @@
+[submodule "src/app/pkg-dbox-examples"]
+	path = src/app/pkg-dbox-examples
+	url = git@github.com:dboxjs/pkg-dbox-examples.git
