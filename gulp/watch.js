@@ -33,7 +33,7 @@ gulp.task('watch', ['markups', 'inject'], function () {
     }
   });
 
-  gulp.watch(path.join(conf.paths.src, '/app/**/*.jade'), ['markups']);
+  gulp.watch(path.join(conf.paths.src, '/app/**/*.pug'), ['markups']);
 
   gulp.watch(path.join(conf.paths.src, '/app/**/*.html'), function(event) {
     browserSync.reload(event.path);

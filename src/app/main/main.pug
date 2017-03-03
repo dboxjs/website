@@ -2,16 +2,17 @@
   //- h1 Dbox.js
   //- p(ng-if="main.data.language === 'english'") Dbox is an awesome library in development
   //- p(ng-if="main.data.language === 'spanish'") Dbox es una biblioteca en desarrollo ultra super genial
-  
+
   ul(style="list-style: none;")
     li
       img.displayed(src='assets/images/logo-gr.png', alt='DBOX')
 
   p.tex-center Dbox es una biblioteca que utiliza el poder de D3.js para realizar gráficas dinámicas predefinidas. Pensada para el desarrollo de visualizaciones interactivas, permite crear gráficos generales personalizables sin tener que empezar el trabajo desde cero, incluyendo interesantes funcionalidades.
   div.btn-center
-    button.btn.btn-primary(type='submit') DESCARGA
-    button.btn.btn-primary(type='submit') DOCUMENTACIÓN
-    button.btn.btn-primary(type='submit') GITHUB
+    button.hide.btn.btn-primary(type='submit') DESCARGA
+    button.hide.btn.btn-primary(type='submit') DOCUMENTACIÓN
+    a(href='https://github.com/dboxjs/dbox', title='Github', target="_blank")
+      button.btn.btn-primary(type='submit') GITHUB
   //-div.img-responsive.hidden-xs-mt.banner.back.back-header(src="assets/images/background.png")
   //-img.img-responsive.visible-xs-mt.hidden-sm.banner.back.back-header(src="assets/images/background02a.jpg")
 
@@ -21,30 +22,30 @@
 //-       source(src='http://thenewcode.com/assets/videos/polina.mp4', type='video/mp4')
 .container
   .row.caracteristicas
-    .col-xs-6.col-md-3
-      div
-        img.img-responsive(src='assets/images/ico-01.png', alt='Alda Facio')
-        br
-        h1 OPEN SOURCE
-        p El código abierto es el software distribuido y desarrollado libremente. Se focaliza más en los beneficios prácticos (acceso al código fuente) que en cuestiones éticas o de libertad que tanto se destacan en el software libre.
-    .col-xs-6.col-md-3
+    .col-xs-6.col-md-4.text-left
       div
         img.img-responsive(src='assets/images/ico-02.png', alt='Alda Facio')
         br
         h1 VARIEDAD DE GRÁFICAS
-        p Hasta el momento con Dbox puedes generar scatters, histogramas, gráficas de líneas de tiempo, gráficos de áreas, treemaps, y puedes visualizar datos geo-referenciados en un mapa de México, con divisiones políticas por estados o municipios. 
-    .col-xs-6.col-md-3
+        p Hasta el momento con Dbox puedes generar scatters, histogramas, gráficas de líneas de tiempo, gráficos de áreas, treemaps, y puedes visualizar datos geo-referenciados en un mapa de México, con divisiones políticas por estados o municipios.
+    .col-xs-6.col-md-4.text-left
       div
         img.img-responsive(src='assets/images/ico-03.png', alt='Alda Facio')
         br
         h1 PERSONALIZABLES
         p Aunque las gráficas son prediseñadas, es posible personalizar el estilo y la funcionalidad de sus visualizaciones a través de hojas de estilo y manejar eventos sin perder el control sobre sus datos. Dbox hará que sea más fácil.
-    .col-xs-6.col-md-3
+    .col-xs-6.col-md-3.hide
       div
         img.img-responsive(src='assets/images/ico-04.png', alt='Alda Facio')
         br
-        h1 UTILIZABLE CON CARTODB
+        h1 UTILIZABLE CON CARTO.JS
         p Dbox permite generar gráficos desde arreglos existentes, archivos csv, tsv, json e integrarlos  con CartoDB ¡permite obtener directamente los datos con una sola consulta!
+    .col-xs-6.col-md-4.text-left
+      div
+        img.img-responsive(src='assets/images/ico-01.png', alt='Alda Facio')
+        br
+        h1 OPEN SOURCE
+        p El código abierto es el software distribuido y desarrollado libremente. Se focaliza más en los beneficios prácticos (acceso al código fuente) que en cuestiones éticas o de libertad que tanto se destacan en el software libre.
 
 .parallax
   .container
@@ -53,66 +54,52 @@
 .backg
   .container
     .row.charts
-      .col-xs-6.col-md-3
+      .col-xs-6.col-md-4
         div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio' ui-sref="chart({chart_id: 1})" ui-sref-opts="{reload: true}")
+          img.img-responsive(src='assets/images/scatter.png', alt='Alda Facio' ui-sref="dbox.scatter" ui-sref-opts="{reload: true}")
+          div.chart-title Scatter
 
-      .col-xs-6.col-md-3
-        div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
-   
-      .col-xs-6.col-md-3
+
+      .col-xs-6.col-md-4.hide
         div
           img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
 
-      .col-xs-6.col-md-3
-        div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
-
-      .col-xs-6.col-md-3
-        div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
-
-      .col-xs-6.col-md-3
-        div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
-
-      .col-xs-6.col-md-3
-        div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
-
-      .col-xs-6.col-md-3
+      .col-xs-6.col-md-4.hide
         div
           img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
 
 
 footer
   .container(style="padding: 0;")
-    .col-sm-2.estilo-footer
+    .col-sm-4.estilo-footer
       p CONTÁCTANOS
       p.linea-footer _________
       img.redes(src='assets/images/email.png', alt='Email')
-      span(style="padding-top: 10px;") info@dbox.com
+      span(style="padding-top: 10px;") info@dboxjs.com
       br
       img.redes(src='assets/images/twitter.png', alt='Twitter')
       span(style="padding-top: 10px;") TWITTER
-      
 
-    .col-sm-2.estilo-footer
+
+    .col-sm-4.estilo-footer
       p PARTNERS
       p.linea-footer _________
-      img(src='assets/images/logo-d4.png', alt='D4')
-      img.fixedheight(src='assets/images/logo-dc.png', alt='Data Civica')
+      a(href='http://datacivica.org', title='DataCívica')
+        img(src='assets/images/logo-dc.png', alt='Data Civica')
+      br
+      a(href='http://data4.mx', title='D4')
+        img.fixedheight(src='assets/images/logo-d4.png', alt='D4')
 
-    .col-sm-2.estilo-footer
+
+    .col-sm-4.estilo-footer
       p DESARROLLO
       p.linea-footer _________
       img.mar-git(src='assets/images/logo-git.png', alt='Github')
-      a.decoration(href='https://github.com', title='Github') https://github.com
+      a.decoration(href='https://github.com/dboxjs/dbox', title='Github') https://github.com/dboxjs/dbox
 
- 
 
-    .col-sm-6.estilo-footer
+
+    .hide.col-sm-6.estilo-footer
       p NEWSLETTER
       p.linea-footer _________
       .input-group
@@ -122,7 +109,7 @@ footer
   .container
     .linea
 
-    p.copy © 2016 DBOX Todos los Derechos Reservados
+    p.copy © 2017 DBOXJS Todos los Derechos Reservados
 
 
 
