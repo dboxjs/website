@@ -21,6 +21,12 @@
         controller: 'devController',
         controllerAs: 'dev'
       })
+    .state('mapRounded',{
+        url: '/map-rounded',
+        templateUrl: 'app/components/map-rounded/mapRounded.html',
+        controller: 'MapRoundedController',
+        controllerAs: 'rounded'
+    })
 
     .state('chart', {
         url: '/chart/:chart_id',
