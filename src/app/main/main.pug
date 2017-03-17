@@ -56,17 +56,32 @@
     .row.charts
       .col-xs-6.col-md-4
         div
-          img.img-responsive(src='assets/images/scatter.png', alt='Alda Facio' ui-sref="dbox.scatter" ui-sref-opts="{reload: true}")
+          div.chart-img(style="background-image: url('assets/images/scatter.png')", alt='Alda Facio' ui-sref="dbox.scatter" ui-sref-opts="{reload: true}")
           div.chart-title Scatter
       .col-xs-6.col-md-4
         div
-          img.img-responsive(src='assets/images/svg_treemap.png', alt='SVG Treemap' ui-sref="dbox.treemap" ui-sref-opts="{reload: true}")
+          div.chart-img(style="background-image: url('assets/images/svg_treemap.png')", alt='SVG Treemap' ui-sref="dbox.treemap" ui-sref-opts="{reload: true}")
           div.chart-title SVG Treemap
 
       .col-xs-6.col-md-4
         div
-          img.img-responsive(src='assets/images/map-rounded.png', alt='SVG Treemap' ui-sref="dbox.treemap" ui-sref-opts="{reload: true}")
+          div.chart-img(style="background-image: url('assets/images/map-rounded.png')", alt='Map Rounded Mexico' ui-sref="dbox.mapRounded" ui-sref-opts="{reload: true}")
           div.chart-title Map
+
+      .col-xs-6.col-md-4
+        div
+          div.chart-img(style="background-image: url('assets/images/bars.png')", alt='Bar chart' ui-sref="dbox.bars" ui-sref-opts="{reload: true}")
+          div.chart-title Bars
+
+      .col-xs-6.col-md-4
+        div
+          div.chart-img(style="background-image: url('assets/images/timeline.png')", alt='Timeline' ui-sref="dbox.timeline" ui-sref-opts="{reload: true}")
+          div.chart-title Timeline
+
+      .col-xs-6.col-md-4
+        div
+          div.chart-img(style="background-image: url('assets/images/heatmap.png')", alt='Heatmap' ui-sref="dbox.heatmap" ui-sref-opts="{reload: true}")
+          div.chart-title Heatmap
 
 
       .col-xs-6.col-md-4.hide
