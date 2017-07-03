@@ -1,0 +1,32 @@
+.container.mr-t-80
+  p.des MAP
+  //- img.img-responsive.hidden-xs-mt.banner(src="assets/images/chart.png")
+  //- img.img-responsive.visible-xs-mt.hidden-sm.banner(src="assets/images/chart2.png")
+  div
+    include map.code.pug
+  br
+  br
+
+  div.btn-center.hide
+    button.btn.btn-primary2(type='submit') EDITAR EN JSFIDDLE
+  br
+  p.des DESCRIPCIÓN
+  p.linea-des
+
+  //p.descripcion Based on https://bl.ocks.org/mbostock/4063582
+  div.nombre
+    p #Map
+  div#code
+    pre
+      code.html
+
+  hr
+  div.nombre
+    p #Data
+  div#data
+    pre
+      code.undefined
+
+  p.des DOCS
+  a(href="https://github.com/dboxjs/dbox/blob/master/docs/map.md" target="_blank")
+    p Go to documentation on GitHub

@@ -1,0 +1,30 @@
+div
+  .section#chart1
+  .section#chart2
+  .section#chart3
+script.
+  var colors = ['#562B4F','#742C6A','#B23733','#DC8933'];
+
+  var config = {
+    'size':{
+      'width':600,
+      'height':600,
+      'margin':{top: 0, right: 0, bottom: 0, left: 0},
+    },
+    'xAxis':{
+      'enabled' : false
+    },
+    'yAxis': {
+      'enabled' : false
+    }
+  };
+
+  dbox.chart(config)
+        .bindTo('#chart1')
+        .data({'tsv':'app/pkg-dbox-examples/data/test.tsv'})
+      .layer(dbox.treemap)
+        .nestBy(['variable','category','subcategory'])
+        .size('number')
+        .format(',.0f')
+      .end()
+        .draw();

@@ -1,0 +1,40 @@
+div
+  .section#map
+script.
+  var colors = ['#562B4F','#742C6A','#B23733','#DC8933'];
+
+  var config = {
+    'size':{
+      'width':650,
+      'height':600,
+      'margin':{top: 0, right: 0, bottom: 0, left: 0},
+      'translateX': 70,
+      'translateY': 300,
+      'scale': 0.9
+    },
+    'xAxis':{
+      'enabled' : false
+    },
+    'yAxis': {
+      'enabled' : false
+    },
+    'plotOptions' : {
+      'map': {
+        'quantiles': {
+          'buckets': 5,
+          'ignoreZeros' : false
+        },
+        'geo': 'mexico',
+        'geoDivision': 'states'
+      }
+    },
+    tip: function(d) { return d.properties.state_name;}
+  };
+
+  dbox.chart(config)
+        .bindTo('#map')
+        .data({'tsv':'app/pkg-dbox-examples/data/test.tsv'})
+      .layer(dbox.map)
+        .z('number')
+      .end()
+        .draw();

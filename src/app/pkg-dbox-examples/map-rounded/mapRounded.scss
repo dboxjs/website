@@ -1,0 +1,56 @@
+.circle-map-rounded:hover{
+  cursor: pointer;
+}
+
+#mapa_svg{
+  width: 100%;
+}
+
+#svgMapContainer{
+  border-right: solid #B3BEC1 2px;
+  position: relative;
+}
+
+.leyend-map{
+    position: absolute;
+    right: 25px;
+    margin-top: 30px;
+}
+
+.leyend-map2{
+    position: absolute;
+    right: 25px;
+    margin-top: 90px;
+}
+
+.state-underline{
+  padding: 0px 35%;
+  background-color: #00B339;
+  font-size: 4px;
+  margin-left: 62%;
+}
+
+.round-map-text{
+  text-align: right;
+  color: #B3B3B3;
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+.rounded-state-name{
+  margin-bottom: -10px;
+  text-align: right;
+  text-transform: uppercase;
+  padding-right: 5px;
+  font-family: oswald;
+}
+
+.rounded-map-tip-states{
+  background-color: rgba(0,0,0,0.6);
+  font-size: 16px;
+  padding: 5px;
+  border-radius: 5px;
+  color: white;
+  font-weight: bold;
+}
