@@ -193,6 +193,12 @@ var chart = function(config) {
             .range([0, vm._width], 0.1);
         break;
 
+        case 'band':
+          scales.x = d3.scaleBand()
+            .rangeRound([0, vm._width])
+            .padding(0.1);
+        break;
+
             case 'quantile':
               scales.x = d3.scaleOrdinal()
                 .range([0, vm._width], 0.1);
@@ -227,6 +233,12 @@ var chart = function(config) {
         case 'ordinal':
           scales.y = d3.scaleOrdinal()
             .range([vm._height, 0], 0.1);
+        break;
+
+        case 'band':
+          scales.y = d3.scaleBand()
+            .rangeRound([vm._height, 0])
+            .padding(0.1);
         break;
 
         case 'quantile':
@@ -744,7 +756,7 @@ var scatter = function(config) {
 
   Scatter.prototype.size = function(size) {
     var vm = this;
-    vm._config.size = size;
+    vm._config.z = z;
     return vm;
   };
 
@@ -760,9 +772,9 @@ var scatter = function(config) {
     return vm;
   };
 
-  Scatter.prototype.colors = function(col) {
+  Scatter.prototype.color = function(col) {
     var vm = this;
-    vm._config.colors = col;
+    vm._config.color = col;
     return vm;
   };
 
@@ -796,10 +808,10 @@ var scatter = function(config) {
     var vm = this;
     vm._data = data.map(function(d) {
       var m = {};
-      m.x = +d[vm._config.x];
-      m.y = +d[vm._config.y];
-      m.color = vm._config.colors.slice(0,1) !== '#' ? d[vm._config.colors] : vm._config.colors;
-      m.size = vm._config.size !== undefined ? d[vm._config.size] : 5;
+      m.x = Number(d[vm._config.x]) == d[vm._config.x] ? +d[vm._config.x] : d[vm._config.x];
+      m.y = Number(d[vm._config.y]) == d[vm._config.y] ? +d[vm._config.y] : d[vm._config.y];
+      m.color = vm._config.color.slice(0,1) !== '#' ? d[vm._config.color] : vm._config.color;
+      m.size = vm._config.z !== undefined ? +d[vm._config.z] : 5;
       
       if(vm._config.properties !== undefined && Array.isArray(vm._config.properties) && vm._config.properties.length > 0){
         vm._config.properties.forEach(function(p){
@@ -834,6 +846,7 @@ var scatter = function(config) {
       sizeMinMax = d3$1.extent(vm._data, function(d) {
         return d.size;
       }); 
+
     var arrOk = [0, 0];
 
     if (vm._config.fixTo45) {
@@ -853,18 +866,24 @@ var scatter = function(config) {
       vm._scales.x.domain(arrOk).nice();
       vm._scales.y.domain(arrOk).nice();
       vm._scales.size = d3$1.scaleLinear()
-                          .range(vm._config.sizeRange !== undefined ? vm._config.sizeRange : [5, 15])
+                          .range(vm._config.sizeRange != undefined ? vm._config.sizeRange : [5, 15])
                           .domain(sizeMinMax).nice(); 
 
     } else {
-      vm._scales.x.domain(xMinMax).nice();
-      vm._scales.y.domain(yMinMax).nice();
+
+      vm._scales.x.domain(xMinMax); //.nice();
+      vm._scales.y.domain(yMinMax); //.nice();
       vm._scales.size = d3$1.scaleLinear()
-                          .range(vm._config.sizeRange !== undefined ? vm._config.sizeRange : [5, 15])
+                          .range(vm._config.sizeRange != undefined ? vm._config.sizeRange : [5, 15])
                           .domain(sizeMinMax).nice(); 
+      if(vm._config.xAxis && vm._config.xAxis.scale !== 'linear') {
+        vm._scales.x.domain(vm._data.map(function(m){ return m.x}));
+      }
+      if(vm._config.yAxis && vm._config.yAxis.scale !== 'linear') {
+        vm._scales.y.domain(vm._data.map(function(m){ return m.y}));
+      }
 
     }
-
     return vm;
   };
 
@@ -886,11 +905,16 @@ var scatter = function(config) {
         return vm._scales.size(d.size);
       })
       .attr("cx", function(d) {
-        return vm._scales.x(d.x);
+        if(vm._config.xAxis.scale == 'ordinal' || vm._config.xAxis.scale == 'band')
+          return vm._scales.x(d.x) + (Math.random() * (vm._scales.x.step() * 0.9));
+        else 
+          return vm._scales.x(d.x);
       })
       .attr("cy", function(d) {
-        //console.log(d, vm._scales, vm._scales.y(d.y));
-        return vm._scales.y(d.y);
+        if(vm._config.yAxis.scale == 'ordinal' || vm._config.yAxis.scale == 'band')
+          return vm._scales.y(d.y) + (Math.random() * (vm._scales.y.step() * 0.9));
+        else 
+          return vm._scales.y(d.y);
       })
       .style("fill", function(d) {
         return d.color.slice(0,1) !== '#' ?  vm._scales.color(d.color) : d.color;
@@ -947,13 +971,13 @@ var timeline = function(config) {
     vm._axes = {};
 
     vm._line = d3$1.line()
-      .curve(d3$1.curveBasis)
+      .curve(d3$1.curveMonotoneX)
       .x(function(d) { return vm._scales.x(d.x); })
       .y(function(d) { return vm._scales.y(d.y); });
 
 
     vm._area = d3$1.area()
-      .curve(d3$1.curveBasis)
+      .curve(d3$1.curveMonotoneX)
       .x(function(d) {
         if (d.alreadyScaled && d.alreadyScaled === true){
           return d.x;
@@ -3008,8 +3032,6 @@ var map = function(config) {
     vm._scales = {};
     vm._axes = {};
     vm._tip = d3.tip().attr('class', 'd3-tip');
-
-    //Commnet
 
     vm._centers = {
       "Aguascalientes":"1006",

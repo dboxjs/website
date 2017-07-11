@@ -9,6 +9,7 @@
   function ScatterController($timeout) {
     var vm = this;
 
+    /*
     var config = {
       'bindTo': '#chart',
       'size':{
@@ -39,7 +40,7 @@
                 .end()
                   .draw();
 
-
+    */
     d3.select("#code").select("code")
       .each(function(d) {
         var code = d3.select(this);
@@ -50,7 +51,8 @@
           });
         })
 
-    /*d3.select("#code")
+
+    d3.select("#code")
       .each(function(d){
         var code = d3.select(this);
         d3.text("/app/pkg-dbox-examples/scatter/scatter.code.html", function(error, content) {
@@ -59,7 +61,7 @@
           code.html(new showdown.Converter().makeHtml(content));
           code.selectAll("code").each(function() { hljs.highlightBlock(this); });
         });
-      })*/
+      })
 
     d3.select("#data").select("code")
       .each(function(d) {

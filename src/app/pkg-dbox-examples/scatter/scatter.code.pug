@@ -1,25 +1,29 @@
-html
-  head
-    meta(charset="utf-8")
+div#chart
+script.
+  var config = {
+    'bindTo': '#chart',
+    'size':{
+      'width':960,
+      'height':500,
+      'margin':{top: 20, right: 20, bottom: 30, left: 40},
+    },
+    'xAxis':{
+      'scale' : 'linear'
+    },
+    'yAxis': {
+      'scale' : 'linear'
+    }
+  }
 
-  body
-    div#chart
-    script(src="//dbox.js")
-    script.
-      var config = {
-        'bindTo': '#chart',
-        'size':{
-          'width':960,
-          'height':500,
-          'margin':{top: 20, right: 20, bottom: 30, left: 40},
-        }
-      }
-
-      var chart = dbox.chart(config)
-                    .data({'tsv':'app/pkg-dbox-examples/data/data.tsv'})
-                  .layer(dbox.scatter)
-                    .x('sepalWidth')
-                    .y('sepalLength')
-                    .color('species')
-                  .end()
-                    .draw();
+  var chart = dbox.chart(config)
+                .data({'tsv':'app/pkg-dbox-examples/data/data.tsv'})
+              .layer(dbox.scatter)
+                .x('sepalWidth')
+                .color('species')
+                .y('sepalLength')
+                .tip(function(d){
+                  console.log(d);
+                  return 'x: ' + d.x + ', y:' + d.y;
+                })
+              .end()
+                .draw();
