@@ -13,17 +13,17 @@ script.
     'yAxis': {
       'scale' : 'linear'
     }
-  }
+  };
 
   var chart = dbox.chart(config)
-                .data({'tsv':'app/pkg-dbox-examples/data/data.tsv'})
-              .layer(dbox.scatter)
-                .x('sepalWidth')
-                .color('species')
-                .y('sepalLength')
-                .tip(function(d){
-                  console.log(d);
-                  return 'x: ' + d.x + ', y:' + d.y;
-                })
-              .end()
-                .draw();
+      .data({'tsv': '/assets/data/data.tsv'})
+    .layer(dbox.scatter)
+      .color('species')
+      .x('sepalWidth')
+      .y('sepalLength')
+      .tip(function(d){
+        console.log(d);
+        return d.color + '\nx: ' + d.x + ', y:' + d.y;
+      })
+    .end()
+      .draw();

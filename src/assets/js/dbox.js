@@ -754,7 +754,7 @@ var scatter = function(config) {
     return vm;
   };
 
-  Scatter.prototype.size = function(size) {
+  Scatter.prototype.size = function(z) {
     var vm = this;
     vm._config.z = z;
     return vm;
@@ -806,18 +806,21 @@ var scatter = function(config) {
 
   Scatter.prototype.data = function(data) {
     var vm = this;
-    vm._data = data.map(function(d) {
+    vm._data = data.map(function(d, i) {
       var m = {};
-      m.x = Number(d[vm._config.x]) == d[vm._config.x] ? +d[vm._config.x] : d[vm._config.x];
-      m.y = Number(d[vm._config.y]) == d[vm._config.y] ? +d[vm._config.y] : d[vm._config.y];
+      m.x = vm._config.xAxis.scale == 'linear' ? +d[vm._config.x] : d[vm._config.x];
+      m.y = vm._config.yAxis.scale == 'linear'? +d[vm._config.y] : d[vm._config.y];
       m.color = vm._config.color.slice(0,1) !== '#' ? d[vm._config.color] : vm._config.color;
-      m.size = vm._config.z !== undefined ? +d[vm._config.z] : 5;
+      console.log(vm._config.z);
+      m.size = vm._config.z !== undefined ? isNaN(vm._config.z) ? +d[vm._config.z] : vm._config.z : 5;
       
       if(vm._config.properties !== undefined && Array.isArray(vm._config.properties) && vm._config.properties.length > 0){
         vm._config.properties.forEach(function(p){
           m[p] = d[p];
         });
       }
+      if( i == 0)
+        console.log(m);
       return m;
     });
     return vm;
@@ -906,13 +909,13 @@ var scatter = function(config) {
       })
       .attr("cx", function(d) {
         if(vm._config.xAxis.scale == 'ordinal' || vm._config.xAxis.scale == 'band')
-          return vm._scales.x(d.x) + (Math.random() * (vm._scales.x.step() * 0.9));
+          return vm._scales.x(d.x) + (Math.random() * (vm._scales.x.bandwidth() - (d.size * 2)));
         else 
           return vm._scales.x(d.x);
       })
       .attr("cy", function(d) {
         if(vm._config.yAxis.scale == 'ordinal' || vm._config.yAxis.scale == 'band')
-          return vm._scales.y(d.y) + (Math.random() * (vm._scales.y.step() * 0.9));
+          return vm._scales.y(d.y) + (Math.random() * (vm._scales.y.bandwidth() - (d.size * 2)));
         else 
           return vm._scales.y(d.y);
       })
