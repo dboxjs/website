@@ -31,7 +31,7 @@
                 .layer(dbox.scatter)
                   .x('sepalWidth')
                   .y('sepalLength')
-                  .color('species')
+                  .colors('species')
                   .tip(function(d){
                     console.log(d);
                     return  'alecs';

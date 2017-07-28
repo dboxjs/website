@@ -48,6 +48,12 @@
         controller: 'TreemapController',
         controllerAs: 'vm'
       })
+      .state('dbox.radar', {
+        url: '/radar',
+        templateUrl: 'app/pkg-dbox-examples/radar/radar.html',
+        controller: 'radarController',
+        controllerAs: 'vm'
+      })
 
 
   }
