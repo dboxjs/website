@@ -18,7 +18,7 @@ script.
   var chart = dbox.chart(config)
       .data({'tsv': '/assets/data/data.tsv'})
     .layer(dbox.scatter)
-      .colors('species')
+      .color('species')
       .x('sepalWidth')
       .y('sepalLength')
       .tip(function(d){

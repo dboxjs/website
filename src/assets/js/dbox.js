@@ -1,8 +1,8 @@
 (function (global, factory) {
-  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('cartodb'), require('d3'), require('textures'), require('lodash')) :
-  typeof define === 'function' && define.amd ? define(['exports', 'cartodb', 'd3', 'textures', 'lodash'], factory) :
-  (factory((global.dbox = global.dbox || {}),global.cartodb,global.d3,global.textures,global._));
-}(this, (function (exports,cartodb,d3$1,textures,_$1) { 'use strict';
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports, require('cartodb')) :
+  typeof define === 'function' && define.amd ? define(['exports', 'cartodb'], factory) :
+  (factory((global.dbox = global.dbox || {}),global.cartodb));
+}(this, (function (exports,cartodb) { 'use strict';
 
 /*
  * CartoDB helper function
@@ -182,6 +182,10 @@ var chart = function (config) {
           scales.x = d3.scaleOrdinal().range([0, vm._width], 0.1);
           break;
 
+        case 'band':
+          scales.x = d3.scaleBand().rangeRound([0, vm._width]).padding(0.1);
+          break;
+
         case 'quantile':
           scales.x = d3.scaleOrdinal().range([0, vm._width], 0.1);
 
@@ -209,6 +213,10 @@ var chart = function (config) {
 
         case 'ordinal':
           scales.y = d3.scaleOrdinal().range([vm._height, 0], 0.1);
+          break;
+
+        case 'band':
+          scales.y = d3.scaleBand().rangeRound([vm._height, 0]).padding(0.1);
           break;
 
         case 'quantile':
@@ -652,634 +660,206 @@ var chart = function (config) {
 };
 
 /*
- * Simple Scatter chart
+ * Simple Bar chart
  */
+var index = function (config) {
 
-var scatter = function (config) {
-
-  function Scatter(config) {
+  function Bars(config) {
     var vm = this;
     vm._config = config ? config : {};
     vm._data = [];
+    vm._config.colorScale = d3.schemeCategory20c;
+    vm._config._format = function (d) {
+      if (d % 1 == 0) {
+        return d3.format(",.0f")(d);
+      } else if (d < 1 && d > 0) {
+        return d3.format(",.2f")(d);
+      } else {
+        return d3.format(",.1f")(d);
+      }
+    };
     vm._scales = {};
     vm._axes = {};
-    vm._tip = d3$1.tip().attr('class', 'd3-tip');
+    //vm._tip = d3.tip().attr('class', 'd3-tip tip-bars').html(vm._config.data.tip || function(d){ return d;});
+    vm._tip = d3.tip().attr('class', 'd3-tip tip-treemap').direction('n').html(vm._config.tip || function (d) {
+      return vm._config._format(d[vm._config.y]);
+    });
   }
 
   //-------------------------------
   //User config functions
-  Scatter.prototype.x = function (col) {
+  Bars.prototype.x = function (columnName) {
     var vm = this;
-    vm._config.x = col;
+    vm._config.x = columnName;
     return vm;
   };
 
-  Scatter.prototype.y = function (col) {
+  Bars.prototype.y = function (columnName) {
     var vm = this;
-    vm._config.y = col;
+    vm._config.y = columnName;
     return vm;
   };
 
-  Scatter.prototype.radius = function (radius) {
+  Bars.prototype.color = function (columnName) {
     var vm = this;
-    vm._config.radius = radius;
+    vm._config.color = columnName;
     return vm;
   };
 
-  Scatter.prototype.radiusRange = function (radiusRange) {
-    var vm = this;
-    vm._config.radiusRange = radiusRange;
-    return vm;
-  };
-
-  Scatter.prototype.properties = function (properties) {
-    var vm = this;
-    vm._config.properties = properties;
-    return vm;
-  };
-
-  Scatter.prototype.colors = function (col) {
-    var vm = this;
-    vm._config.colors = col;
-    return vm;
-  };
-
-  Scatter.prototype.opacity = function (opacity) {
-    var vm = this;
-    vm._config.opacity = opacity;
-    return vm;
-  };
-
-  Scatter.prototype.tip = function (tip$$1) {
-    var vm = this;
-    vm._config.tip = tip$$1;
-    vm._tip.html(vm._config.tip);
-    return vm;
-  };
-
-  Scatter.prototype.end = function () {
+  Bars.prototype.end = function () {
     var vm = this;
     return vm._chart;
   };
 
-  //-------------------------------
-  //Triggered by chart.js;
-  Scatter.prototype.chart = function (chart) {
+  Bars.prototype.colorScale = function (colorScale) {
     var vm = this;
-    vm._chart = chart;
-    return vm;
-  };
-
-  Scatter.prototype.data = function (data) {
-    var vm = this;
-    vm._data = data.map(function (d) {
-      var m = {};
-      m.x = +d[vm._config.x];
-      m.y = +d[vm._config.y];
-      m.color = vm._config.colors.slice(0, 1) !== '#' ? d[vm._config.colors] : vm._config.colors;
-      m.radius = vm._config.radius !== undefined ? d[vm._config.radius] : 5;
-      if (vm._config.properties !== undefined && Array.isArray(vm._config.properties) && vm._config.properties.length > 0) {
-        vm._config.properties.forEach(function (p) {
-          m[p] = d[p];
-        });
-      }
-      return m;
-    });
-    return vm;
-  };
-
-  Scatter.prototype.scales = function (s) {
-    var vm = this;
-    vm._scales = s;
-    return vm;
-  };
-
-  Scatter.prototype.axes = function (a) {
-    var vm = this;
-    vm._axes = a;
-    return vm;
-  };
-
-  Scatter.prototype.domains = function () {
-    var vm = this;
-    var xMinMax = d3$1.extent(vm._data, function (d) {
-      return d.x;
-    }),
-        yMinMax = d3$1.extent(vm._data, function (d) {
-      return d.y;
-    }),
-        radiusMinMax = d3$1.extent(vm._data, function (d) {
-      return d.radius;
-    });
-    var arrOk = [0, 0];
-
-    if (vm._config.fixTo45) {
-      if (xMinMax[1] > yMinMax[1]) {
-        arrOk[1] = xMinMax[1];
-      } else {
-        arrOk[1] = yMinMax[1];
-      }
-
-      if (xMinMax[0] < yMinMax[0]) {
-        //yMinMax = xMinMax;
-        arrOk[0] = xMinMax[0];
-      } else {
-        arrOk[0] = yMinMax[0];
-      }
-
-      vm._scales.x.domain(arrOk).nice();
-      vm._scales.y.domain(arrOk).nice();
-      vm._scales.radius = d3$1.scaleLinear().range(vm._config.radiusRange !== undefined ? vm._config.radiusRange : [5, 15]).domain(radiusMinMax).nice();
+    if (Array.isArray(colorScale)) {
+      vm._config.colorScale = colorScale;
     } else {
-      vm._scales.x.domain(xMinMax).nice();
-      vm._scales.y.domain(yMinMax).nice();
-      vm._scales.radius = d3$1.scaleLinear().range(vm._config.radiusRange !== undefined ? vm._config.radiusRange : [5, 15]).domain(radiusMinMax).nice();
+      vm._scales.color = colorScale;
+      vm._config.colorScale = colorScale.range();
     }
-
     return vm;
   };
 
-  Scatter.prototype.draw = function () {
+  Bars.prototype.format = function (format) {
     var vm = this;
-
-    //Call the tip
-    vm._chart._svg.call(vm._tip);
-
-    var circles = vm._chart._svg.selectAll(".dot").data(vm._data)
-    //.data(vm._data, function(d){ return d.key})
-    .enter().append("circle").attr("class", "dot").attr("class", function (d, i) {
-      return d.properties !== undefined && d.properties.id !== undefined ? "scatter-" + d.properties.id : "scatter-" + i;
-    }).attr("r", function (d) {
-      return vm._scales.radius(d.radius);
-    }).attr("cx", function (d) {
-      return vm._scales.x(d.x);
-    }).attr("cy", function (d) {
-      //console.log(d, vm._scales, vm._scales.y(d.y));
-      return vm._scales.y(d.y);
-    }).style("fill", function (d) {
-      return d.color.slice(0, 1) !== '#' ? vm._scales.color(d.color) : d.color;
-    }).style("opacity", vm._config.opacity !== undefined ? vm._config.opacity : 1).on('mouseover', function (d, i) {
-      if (vm._config.mouseover) {
-        vm._config.mouseover.call(vm, d, i);
-      }
-      vm._tip.show(d, d3$1.select(this).node());
-    }).on('mouseout', function (d, i) {
-      if (vm._config.mouseout) {
-        vm._config.mouseout.call(this, d, i);
-      }
-      vm._tip.hide(d, d3$1.select(this).node());
-    }).on("click", function (d, i) {
-      if (vm._config.onclick) {
-        vm._config.onclick.call(this, d, i);
-      }
-    });
-
+    if (typeof format == 'function' || format instanceof Function) vm._config._format = format;else vm._config._format = d3.format(format);
     return vm;
-  };
-
-  Scatter.prototype.select = function (id) {
-    var vm = this;
-    return vm._chart._svg.select("circle.scatter-" + id);
-  };
-
-  Scatter.prototype.selectAll = function (id) {
-    var vm = this;
-    return vm._chart._svg.selectAll("circle");
-  };
-
-  return new Scatter(config);
-};
-
-/* Simple timeline example
- * Single and multiline timelines
- */
-
-var timeline = function (config) {
-
-  var parseDate = d3$1.timeParse('%Y-%m-%d');
-
-  function Timeline(config) {
-    var vm = this;
-    vm._config = config ? config : {};
-    vm._config.area = false;
-    vm._data = [];
-    vm._scales = {};
-    vm._axes = {};
-
-    vm._line = d3$1.line().curve(d3$1.curveBasis).x(function (d) {
-      return vm._scales.x(d.x);
-    }).y(function (d) {
-      return vm._scales.y(d.y);
-    });
-
-    vm._area = d3$1.area().curve(d3$1.curveBasis).x(function (d) {
-      if (d.alreadyScaled && d.alreadyScaled === true) {
-        return d.x;
-      } else {
-        return vm._scales.x(d.x);
-      }
-    }).y1(function (d) {
-      if (d.alreadyScaled && d.alreadyScaled === true) {
-        return d.y;
-      } else {
-        return vm._scales.y(d.y);
-      }
-    });
-  }
-
-  //-------------------------------
-  //User config functions
-  Timeline.prototype.x = function (col) {
-    var vm = this;
-    vm._config.x = col;
-    return vm;
-  };
-
-  Timeline.prototype.y = function (col) {
-    var vm = this;
-    vm._config.y = col;
-    return vm;
-  };
-
-  Timeline.prototype.series = function (arr) {
-    var vm = this;
-    vm._config.series = arr;
-    return vm;
-  };
-
-  Timeline.prototype.colors = function (arr) {
-    var vm = this;
-    vm._config.colors = arr;
-    return vm;
-  };
-
-  Timeline.prototype.timeParse = function (timeParse$$1) {
-    var vm = this;
-    parseDate = d3$1.timeParse(timeParse$$1);
-    return vm;
-  };
-
-  Timeline.prototype.area = function (area$$1) {
-    var vm = this;
-    vm._config.area = area$$1;
-    return vm;
-  };
-
-  Timeline.prototype.color = function (col) {
-    var vm = this;
-    vm._config.color = col;
-    return vm;
-  };
-
-  Timeline.prototype.end = function () {
-    var vm = this;
-    return vm._chart;
   };
 
   //-------------------------------
   //Triggered by the chart.js;
-  Timeline.prototype.chart = function (chart) {
+  Bars.prototype.chart = function (chart) {
     var vm = this;
     vm._chart = chart;
     return vm;
   };
 
-  Timeline.prototype.data = function (data) {
+  Bars.prototype.data = function (data) {
     var vm = this;
-
     vm._data = data.map(function (d) {
-      d.x = parseDate(d[vm._config.x]);
-      delete d[vm._config.x];
+      if (d[vm._config.x] == Number(d[vm._config.x])) d[vm._config.x] = +d[vm._config.x];
+      if (d[vm._config.y] == Number(d[vm._config.y])) d[vm._config.y] = +d[vm._config.y];
       return d;
     });
-
-    vm._lines = vm._config.y ? vm._config.y : vm._config.series;
-
-    vm._lines = vm._lines.map(function (name) {
-      return {
-        name: name,
-        values: data.map(function (d) {
-          return { x: d.x, y: +d[name] };
-        })
-      };
-    });
     return vm;
   };
 
-  Timeline.prototype.scales = function (s) {
+  Bars.prototype.scales = function (s) {
     var vm = this;
-    vm._scales = s;
+    //vm._scales = s;
+    /* Use
+    * vm._config.x
+    * vm._config.xAxis.scale
+    * vm._config.y
+    * vm._config.yAxis.scale
+    * vm._data
+    */
+    /* Generate x scale */
+    var config = {
+      column: vm._config.x,
+      type: vm._config.xAxis.scale,
+      range: [0, vm._chart._width],
+      minZero: true
+    };
+    vm._scales.x = vm._chart.generateScale(vm._data, config);
+
+    /* Generate y scale */
+    config = {
+      column: vm._config.y,
+      type: vm._config.yAxis.scale,
+      range: [vm._chart._height, 0],
+      minZero: true
+    };
+    vm._scales.y = vm._chart.generateScale(vm._data, config);
+    vm._chart._scales.x = vm._scales.x;
+    vm._chart._scales.y = vm._scales.y;
+
+    if (!vm._scales.color) vm._scales.color = d3.scaleOrdinal(vm._config.colorScale);
     return vm;
   };
 
-  Timeline.prototype.axes = function (a) {
+  Bars.prototype.axes = function (a) {
     var vm = this;
     vm._axes = a;
     return vm;
   };
 
-  Timeline.prototype.domains = function () {
+  Bars.prototype.domains = function () {
     var vm = this;
-    vm._xMinMax = d3$1.extent(vm._data, function (d) {
-      return d.x;
-    });
-
-    vm._yMinMax = [d3$1.min(vm._lines, function (c) {
-      return d3$1.min(c.values, function (v) {
-        return v.y;
-      });
-    }), d3$1.max(vm._lines, function (c) {
-      return d3$1.max(c.values, function (v) {
-        return v.y;
-      });
-    })];
-
-    vm._scales.x.domain(vm._xMinMax);
-    vm._scales.y.domain(vm._yMinMax);
-
-    //console.log(vm._scales.x.domain(), vm._chart._scales.x.domain())
-
-    vm._chart._scales = vm._scales;
-
     return vm;
   };
 
-  Timeline.prototype.draw = function () {
+  Bars.prototype.draw = function () {
     var vm = this;
+    vm._chart._svg.call(vm._tip);
 
-    var lines = vm._chart._svg.selectAll(".lines").data(vm._lines).enter().append("g").attr("class", "lines");
+    /*if(vm._config.xAxis.enabled) {
+       vm._chart._svg.append("g")
+          .attr("class", "xAxis axis")
+          .attr("transform", "translate(0," + vm._chart._height + ")")
+          .call(d3.axisBottom(vm._scales.x)
+            .tickValues(vm._config.xAxis.tickValues)
+            .tickFormat(vm._config.xAxis.tickFormat)
+          );
+        //vm._chart._svg.selectAll(".xAxis.axis text").attr("transform", "translate(0,10)rotate(-20)");
+    }*/
 
-    var path = vm._chart._svg.selectAll(".lines").append("path").attr("class", "line").attr("d", function (d) {
-      return vm._line(d.values);
-    }).style("stroke", function (d, i) {
-      return vm._config.colors[i];
-    }).style("fill", 'none');
+    /*if(vm._config.yAxis.enabled) {
+      if(vm._config.yAxis.position == 'right') {
+        var yAxis = d3.axisRight(vm._scales.y)
+              .ticks(vm._config.yAxis.ticks)
+              .tickValues(vm._config.yAxis.tickValues)
+              .tickFormat(vm._config.yAxis.tickFormat);
+      } else {
+        var yAxis = d3.axisLeft(vm._scales.y)
+              .ticks(vm._config.yAxis.ticks)
+              .tickValues(vm._config.yAxis.tickValues)
+              .tickFormat(vm._config.yAxis.tickFormat);
+      }
+      var axisY = vm._chart._svg.append("g")
+          .attr("class", "yAxis axis");
+      if(vm._config.yAxis.position == 'right')
+        axisY.attr("transform", "translate(" + vm._chart._width + ",0)");
+      axisY.call(yAxis);
+        /*
+        Axis Title
+        .append("text")
+          .attr("transform", "rotate(-90)")
+          .attr("y", 6)
+          .attr("dy", "0.71em")
+          .attr("text-anchor", "end")
+          .text("Frequency");
+        
+    }*/
 
-    //var t = textures.lines().thicker();
-    //vm._chart._svg.call(t);
-
-    if (vm._config.area === true) {
-      vm._area.y0(vm._scales.y(vm._yMinMax[0]));
-
-      var areas = vm._chart._svg.selectAll(".areas").data(vm._lines).enter().append("g").attr("class", "areas");
-
-      var pathArea = vm._chart._svg.selectAll(".areas").append("path").attr("class", "area").attr("d", function (d) {
-        return vm._area(d.values);
-      }).attr("fill", function (d, i) {
-        return vm._config.colors[i];
-      });
-    }
-
-    /*path.each(function(d) { d.totalLength = this.getTotalLength(); })
-      .attr("stroke-dasharray", function(d) { return d.totalLength + " " + d.totalLength; })
-      .attr("stroke-dashoffset", function(d) { return d.totalLength; })
-      .transition()
-        .duration(5000)
-        .ease(d3.easeLinear)
-        .attr("stroke-dashoffset", 0);*/
-
+    vm._chart._svg.selectAll(".bar").data(vm._data).enter().append("rect").attr("class", "bar").attr("x", function (d) {
+      return vm._config.xAxis.scale == 'linear' && vm._config.yAxis.scale == 'linear' ? 0 : vm._scales.x(d[vm._config.x]);
+    }).attr("y", function (d) {
+      return vm._scales.y(d[vm._config.y]);
+    }).attr("width", function (d) {
+      return vm._scales.x.bandwidth ? vm._scales.x.bandwidth() : vm._scales.x(d[vm._config.x]);
+    }).attr("height", function (d) {
+      return vm._chart._height - vm._scales.y(d[vm._config.y]);
+    }).attr("fill", function (d) {
+      return vm._scales.color(d[vm._config.color]);
+    }).style("opacity", 0.9).on('mouseover', function (d) {
+      vm._tip.show(d, d3.select(this).node());
+    }).on('mouseout', function () {
+      vm._tip.hide();
+    }).on('click', function () {});
     return vm;
   };
 
-  return new Timeline(config);
+  return new Bars(config);
 };
 
-/*import chart from './chart.js';
+/*
+ * Heatmap Chart
+ */
 
-function Timeline(config) {
-  var vm = this;
-  vm._config = config;
-  vm._chart;
-  vm._scales = {};
-  vm._axes = {};
-}
-
-Timeline.prototype = timeline.prototype = {
-	generate:function(){
-		var vm = this, q;
-
-		vm.draw();
-    vm.setScales();
-		vm.setAxes();
-
-		q = vm._chart.loadData();
-
-    q.await(function(error,data){
-      if (error) {
-        //console.log(error)
-        throw error;
-        return false;
-      }
-
-      vm.setData(data);
-      vm.setDomains();
-      vm.drawAxes();
-      console.log("generate", vm._data);
-      vm.drawData();
-    })
-
-	},
-	draw : function(){
-		var vm = this
-		vm._chart = chart(vm._config);
-	},
-	setScales: function(){
-		var vm = this;
-
-		vm._scales.x = d3.scaleTime()
-		  .range([0, vm._chart._width]);
-
-		vm._scales.y = d3.scaleLinear()
-		  .range([vm._chart._height, 0]);
-
-    vm._scales.color = d3.scaleOrdinal(d3.schemeCategory20c);
-	},
-	setAxes : function(){
-		var vm = this;
-
-		vm._axes.x = d3.svg.axis()
-		  .scale(vm._scales.x)
-		  .orient("bottom");
-
-		vm._axes.y = d3.svg.axis()
-		  .scale(vm._scales.y)
-		  .orient("left");
-
-
-    if(vm._config.yAxis && vm._config.yAxis.ticks
-        && vm._config.yAxis.ticks.enabled === true && vm._config.yAxis.ticks.style ){
-
-      switch(vm._config.yAxis.ticks.style){
-        case 'straightLine':
-          vm._axes.y
-            .tickSize(-vm._chart._width,0);
-        break;
-      }
-
-    }
-
-    if( vm._config.yAxis.ticks.format){
-      console.log('Set tick format');
-      vm._axes.y.tickFormat(vm._config.yAxis.ticks.format);
-    }
-	},
-	setData:function(data){
-    var vm = this;
-    var keys = d3.keys(data[0]).filter(function(key) { return key !== "date"; });
-
-    var series = keys.map(function(name) {
-      return {
-        name: name,
-        values: data.map(function(d) {
-          return {x: d.date, y: +d[name]};
-        })
-      };
-    });
-
-    vm._data = series;
-  },
-  setDomains:function(){
-    var vm = this;
-
-    vm._scales.color.domain(vm._data.map(function(serie){
-      return serie.name;
-    }));
-
-    vm._scales.x.domain([
-      d3.min(vm._data, function(c) { return d3.min(c.values, function(v) { return v.x; }); }),
-      d3.max(vm._data, function(c) { return d3.max(c.values, function(v) { return v.x; }); })
-    ]);
-
-    vm._scales.y.domain([
-      d3.min(vm._data, function(c) { return d3.min(c.values, function(v) { return v.y; }); }),
-      d3.max(vm._data, function(c) { return d3.max(c.values, function(v) { return v.y; }); })
-    ]);
-  },
-  drawAxes:function(){
-    var vm = this;
-
-    vm._chart._svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(0," + vm._chart._height + ")")
-        .call(vm._axes.x)
-      .append("text")
-        .attr("class", "label")
-        .attr("x", vm._chart._width)
-        .attr("y", -6)
-        .style("text-anchor", "end")
-        .text("");
-
-    var yAxis = vm._chart._svg.append("g")
-        .attr("class", "y axis")
-        .call(vm._axes.y)
-
-
-    if(vm._config.yAxis && vm._config.yAxis.text){
-      yAxis.append("text")
-        .attr("class", "label")
-        .attr("transform", "rotate(-90)")
-        .attr("x", -vm._chart._height/2)
-        .attr("y", -vm._config.size.margin.left + 10)
-        .attr("dy", ".71em")
-        .style("text-anchor", "middle")
-        .style("font-size","14px")
-        .text(vm._config.yAxis.text);
-    }
-
-  },
-  drawData : function(){
-    var vm = this;
-    var line = d3.svg.line()
-        .interpolate(vm._config.data.interpolation)
-        .defined(function(d) { return d; })
-        .x(function(d) { return vm._scales.x(d.x); })
-        .y(function(d) { return vm._scales.y(d.y); });
-
-    var series = vm._chart._svg.selectAll(".series")
-        .data(vm._data)
-      .enter().append("g")
-        .attr("class", "series")
-
-    series.append("path")
-        .attr("class", "line")
-        .attr("d", function(d) { return line(d.values); })
-        .style("stroke-dasharray",function(d){ if(d.name == "Nacional"){
-            return ("10,5");
-          }})
-        .style("stroke", function(d) {
-          if(d.color){ return d.color; }
-          else { return vm._scales.color(d.key); }
-        }) //return vm._scales.color(d.name); })
-        .style("stroke-width", 3);
-
-
-    series.selectAll('.dot')
-        .data(function(d){return d.values})
-      .enter().append("circle")
-        .attr("class", "dot")
-        .attr("r", 3)
-        .attr("cx", function(d) { return vm._scales.x(d.x); })
-        .attr("cy", function(d) { return vm._scales.y(d.y); })
-        .style("fill", function(d) {
-          if(d.color){ return d.color; }
-          else { return vm._scales.color(d.key); }
-        })//return vm._scales.color(d.name); })
-        .style("stroke", function(d) {
-          if(d.color){ return d.color; }
-          else { return vm._scales.color(d.key); }
-        }) // return vm._scales.color(d.name); })
-        .on('mouseover', function(d,i){
-          if(vm._config.data.mouseover){
-            vm._config.data.mouseover.call(vm, d,i)
-          }
-          vm._chart._tip.show(d, d3.select(this).node())
-        })
-        .on('mouseout',function(d,i){
-          if(vm._config.data.mouseout){
-            vm._config.data.mouseout.call(vm, d,i)
-          }
-          vm._chart._tip.hide(d, d3.select(this).node())
-        });
-
-        //series.selectAll('.dot-inside')
-        //  .data(function(d){return d.values})
-        //.enter().append("circle")
-        //  .attr("class", "dot-inside")
-        //  .attr("r", 4)
-        //  .attr("cx", function(d) { return vm._scales.x(d.x); })
-        //  .attr("cy", function(d) { return vm._scales.y(d.y); })
-        //  .style("fill", 'black')//return vm._scales.color(d.name); })
-        //  .style("stroke", function(d) { return d.color;}) // return vm._scales.color(d.name); })
-        //  .on('mouseover', function(d,i){
-        //    if(vm._config.data.mouseover){
-        //      vm._config.data.mouseover.call(vm, d,i)
-        //    }
-        //    vm._chart._tip.show(d, d3.select(this).node())
-        //  })
-        //  .on('mouseout',function(d,i){
-        //    if(vm._config.data.mouseout){
-        //      vm._config.data.mouseout.call(vm, d,i)
-        //    }
-        //    vm._chart._tip.hide(d, d3.select(this).node())
-        //  });
-
-
-    //series.append("text")
-    //    .datum(function(d) { return {name: d.name, value: d.values[d.values.length - 1]}; })
-    //    .attr("transform", function(d) { return "translate(" + vm._scales.x(d.value.x) + "," + vm._scales.y(d.value.y) + ")"; })
-    //    .attr("x", 3)
-    //    .attr("dy", ".35em")
-    //    .text(function(d) { return d.name; });
-  }
-
-
-}
-
-export default function timeline(config) {
-  return new Timeline(arguments.length ? config : null);
-}*/
-
-var heatmap = function (config) {
+var index$1 = function (config) {
 
   function Heatmap(config) {
     var vm = this;
@@ -1290,9 +870,9 @@ var heatmap = function (config) {
     vm._gridSize = Math.floor(vm._config.size.width / 16);
     vm._legendElementWidth = vm._gridSize;
 
-    vm._config._format = d3$1.format(",.1f");
+    vm._config._format = d3.format(",.1f");
 
-    vm._tip = d3$1.tip().attr('class', 'd3-tip');
+    vm._tip = d3.tip().attr('class', 'd3-tip');
   }
 
   //-------------------------------
@@ -1315,9 +895,9 @@ var heatmap = function (config) {
     return vm;
   };
 
-  Heatmap.prototype.tip = function (tip$$1) {
+  Heatmap.prototype.tip = function (tip) {
     var vm = this;
-    vm._config.tip = tip$$1;
+    vm._config.tip = tip;
     vm._tip.html(vm._config.tip);
     return vm;
   };
@@ -1399,7 +979,7 @@ var heatmap = function (config) {
     //.attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
 
 
-    var colorScale = d3$1.scaleQuantile().domain([0, d3$1.max(vm._data, function (d) {
+    var colorScale = d3.scaleQuantile().domain([0, d3.max(vm._data, function (d) {
       return d.value;
     })]).range(vm._config.colors);
 
@@ -1417,17 +997,17 @@ var heatmap = function (config) {
       /*if(vm._config.data.mouseover){
         vm._config.data.mouseover.call(vm, d,i);
       }*/
-      vm._tip.show(d, d3$1.select(this).node());
+      vm._tip.show(d, d3.select(this).node());
     }).on('mouseout', function (d, i) {
       /*if(vm._config.data.mouseout){
         vm._config.data.mouseout.call(this, d,i);
       }*/
-      vm._tip.hide(d, d3$1.select(this).node());
+      vm._tip.hide(d, d3.select(this).node());
     }).on("click", function (d, i) {
       if (vm._config.data.onclick) {
         vm._config.data.onclick.call(this, d, i);
       }
-    }).style("fill", vm._config.colors[0]).transition().duration(3000).ease(d3$1.easeLinear).style("fill", function (d) {
+    }).style("fill", vm._config.colors[0]).transition().duration(3000).ease(d3.easeLinear).style("fill", function (d) {
       return colorScale(d.value);
     });
 
@@ -1454,16 +1034,1063 @@ var heatmap = function (config) {
   return new Heatmap(config);
 };
 
-/* Simple SVG Treemap example
+/*
+ * Build a radar chart.
  */
 
-var treemap$1 = function (config) {
+var radar = function (config) {
+  function Radar(config) {
+    var vm = this,
+        size;
+
+    vm.CIRCLE_RADIANS = 2 * Math.PI;
+
+    // The first axis must be at the circle's top.
+    vm.RADIANS_TO_ROTATE = vm.CIRCLE_RADIANS / -4;
+
+    vm._config = config ? config : {};
+    vm._data = [];
+    vm._scales = {};
+    vm._axes = {};
+    vm._axesData = {};
+    vm._filter = null;
+    vm._minMax = [0, 0];
+    vm._viewData = [];
+    vm._colorMap = {};
+    vm._ticks = 0;
+    vm._scale = null;
+    vm._excludedPolygons = [];
+
+    // Set defaults.
+    if (!vm._config.ticks) {
+      vm._config.ticks = 10;
+    }
+
+    if (!vm._config.transitionDuration) {
+      vm._config.transitionDuration = 400;
+    }
+
+    if (!vm._config.axisLabelMargin) {
+      vm._config.axisLabelMargin = 24;
+    }
+
+    if (!vm._config.legend) {
+      vm._config.legend = {
+        enable: true
+      };
+    }
+
+    if (!vm._config.legend.at) {
+      vm._config.legend.at = {
+        x: 20,
+        y: 20
+      };
+    }
+
+    if ('undefined' == typeof vm._config.styleDefaults) {
+      vm._config.styleDefaults = true;
+    }
+
+    // Calculate basic data.
+    size = vm._config.size;
+
+    vm._center = {
+      x: size.width / 2 - size.margin.left,
+      y: size.height / 2 - size.margin.top
+    };
+
+    vm._radius = Math.min((size.width - size.margin.left - size.margin.right) / 2, (size.height - size.margin.top - size.margin.bottom) / 2);
+  }
+
+  // User API.
+
+  Radar.prototype.polygonsFrom = function (column) {
+    var vm = this;
+    vm._config.polygonsFrom = column;
+    return vm;
+  };
+
+  Radar.prototype.axesFrom = function (column) {
+    var vm = this;
+    vm._config.axesFrom = column;
+    return vm;
+  };
+
+  Radar.prototype.valuesFrom = function (column) {
+    var vm = this;
+    vm._config.valuesFrom = column;
+    return vm;
+  };
+
+  Radar.prototype.ticks = function (ticks) {
+    var vm = this;
+    vm._config.ticks = ticks;
+    return vm;
+  };
+
+  Radar.prototype.colors = function (colors) {
+    var vm = this;
+    vm._config.colors = colors;
+    return vm;
+  };
+
+  Radar.prototype.end = function () {
+    var vm = this;
+    return vm._chart;
+  };
+
+  // Internal helpers.
+
+  Radar.prototype.drawTicks = function () {
+    var vm = this,
+        svg = vm._chart._svg,
+        dur = vm._config.transitionDuration,
+        sel;
+
+    sel = svg.select('g.ticks');
+
+    if (sel.empty()) {
+      sel = svg.append('g').attr('class', 'ticks');
+    }
+
+    sel = sel.selectAll('circle.tick').data(
+    // Add an explicit index for keying the chart with their original array
+    // indexes, then reverse it so rendering occurs from bigger to smaller
+    // circles, allowing to set a fill color to the concentric cirlces
+    // without getting the more external cirlce capping all the others.
+    vm._ticks.map(function (val, idx) {
+      return [idx, val];
+    }).reverse(), function (d) {
+      return d[0];
+    });
+
+    sel.transition().duration(dur).attr('r', function (d) {
+      return vm._scale(d[1]);
+    });
+
+    sel.enter().append('circle').classed('tick', true).attr('cx', vm._center.x).attr('cy', vm._center.y).style('fill', vm._ifStyleDefaults('none')).style('stroke', vm._ifStyleDefaults('gray')).attr('r', function (d) {
+      return vm._scale(d[1]);
+    }).attr('opacity', 0).transition().duration(dur).attr('opacity', 1);
+
+    sel.exit().transition().duration(dur).attr('opacity', 0).remove();
+  };
+
+  Radar.prototype.drawTicksLabels = function () {
+    var vm = this,
+        svg = vm._chart._svg,
+        margin = 2,
+        dur = vm._config.transitionDuration,
+        sel;
+
+    sel = svg.select('g.ticks-labels');
+
+    if (sel.empty()) {
+      sel = svg.append('g').attr('class', 'ticks-labels');
+    }
+
+    sel = sel.selectAll('text.tick-label').data(vm._ticks);
+
+    sel.transition().duration(dur).text(function (d) {
+      return d;
+    }).attr('y', function (d) {
+      return vm._center.y - margin - vm._scale(d);
+    });
+
+    sel.enter().append('text').text(function (d) {
+      return d;
+    }).attr('class', 'tick-label').attr('x', vm._center.x + margin).attr('y', function (d) {
+      return vm._center.y - margin - vm._scale(d);
+    }).attr('fill', vm._ifStyleDefaults('gray')).style('font-family', vm._ifStyleDefaults('sans-serif')).attr('opacity', 0).transition().duration(dur).attr('opacity', 1);
+
+    sel.exit().transition().duration(dur).attr('opacity', 0).remove();
+  };
+
+  Radar.prototype.extractAxes = function (data) {
+    var result,
+        vm = this,
+        axes = vm._config.axesFrom,
+        radiansPerAxis;
+
+    result = data.reduce(function (prev, item) {
+      return prev.indexOf(item[axes]) > -1 ? prev : prev.concat(item[axes]);
+    }, []);
+
+    radiansPerAxis = vm.CIRCLE_RADIANS / result.length;
+
+    result = result.map(function (item, idx) {
+      return {
+        axis: item,
+        rads: idx * radiansPerAxis + vm.RADIANS_TO_ROTATE
+      };
+    });
+
+    return {
+      list: result,
+      hash: result.reduce(function (hashed, el) {
+        hashed[el.axis] = el;
+        return hashed;
+      }, {})
+    };
+  };
+
+  Radar.prototype.buildColorMap = function (data) {
+    var vm = this,
+        colors = vm._config.colors;
+    return data.reduce(function (cMap, row) {
+      var polyg = row[vm._config.polygonsFrom],
+          cIdx = cMap.index.indexOf(polyg);
+
+      if (cIdx == -1) {
+        cIdx = cMap.index.push(polyg) - 1;
+        cMap.hash[polyg] = colors[cIdx];
+        cMap.list.push({ polygon: polyg, color: colors[cIdx] });
+      }
+      return cMap;
+    }, { index: [], hash: {}, list: [] });
+  };
+
+  Radar.prototype.drawAxes = function () {
+    var vm = this,
+        svg = vm._chart._svg,
+        duration = vm._config.transitionDuration,
+        selection;
+
+    selection = svg.selectAll('line.axis').data(vm._axesData.list, function (d) {
+      return d.axis;
+    });
+
+    selection.enter().append('line').classed('axis', true).attr('x1', vm._center.x).attr('y1', vm._center.y).style('stroke', vm._ifStyleDefaults('gray')).attr('x2', vm._center.x).attr('y2', vm._center.y).transition().duration(duration).attr('x2', function (d) {
+      return vm.xOf(d.rads, vm._radius + 8);
+    }).attr('y2', function (d) {
+      return vm.yOf(d.rads, vm._radius + 8);
+    });
+
+    selection.transition().duration(duration).attr('x2', function (d) {
+      return vm.xOf(d.rads, vm._radius + 8);
+    }).attr('y2', function (d) {
+      return vm.yOf(d.rads, vm._radius + 8);
+    });
+
+    selection.exit().transition().duration(duration).attr('x2', vm._center.x).attr('y2', vm._center.y).remove();
+  };
+
+  Radar.prototype.drawAxesLabels = function () {
+    var vm = this,
+        svg = vm._chart._svg,
+        duration = vm._config.transitionDuration,
+        fromCenter = vm._radius + vm._config.axisLabelMargin,
+        labels;
+
+    labels = svg.selectAll('text.axis-label').data(vm._axesData.list, function (d) {
+      return d.axis;
+    });
+
+    labels.transition().duration(duration).attr('x', function (d) {
+      return vm.xOf(d.rads, fromCenter);
+    }).attr('y', function (d) {
+      return vm.yOf(d.rads, fromCenter);
+    });
+
+    labels.enter().append('text').attr('class', 'axis-label').attr('text-anchor', 'middle').attr('fill', vm._ifStyleDefaults('gray')).style('font-family', vm._ifStyleDefaults('sans-serif')).text(function (d) {
+      return d.axis;
+    }).attr('x', function (d) {
+      return vm.xOf(d.rads, fromCenter);
+    }).attr('y', function (d) {
+      return vm.yOf(d.rads, fromCenter);
+    }).attr('opacity', 0).transition().duration(duration).attr('opacity', 1);
+
+    labels.exit().transition().duration(duration).attr('opacity', 0).remove();
+  };
+
+  Radar.prototype.drawPolygons = function () {
+    var vm = this,
+        data = vm._viewData,
+        svg = vm._chart._svg,
+        duration = vm._config.transitionDuration,
+        groupedData,
+        gs,
+        gsExit,
+        gsEnter;
+
+    // Prepare the data.
+    groupedData = data.reduce(function (bundle, row) {
+      var polygIdx = bundle.keys.indexOf(row.polygon);
+      if (polygIdx == -1) {
+        polygIdx = bundle.keys.push(row.polygon) - 1;
+        bundle.polygons.push({
+          polygon: row.polygon,
+          color: row.color,
+          points: [],
+          values: []
+        });
+      }
+      bundle.polygons[polygIdx].values.push(row);
+      bundle.polygons[polygIdx].points.push(row.xy.join(','));
+      return bundle;
+    }, { keys: [], polygons: [] }).polygons;
+
+    gs = svg.selectAll('g.polygon-container').data(groupedData, function (d) {
+      return d.polygon + '-container';
+    });
+
+    gsEnter = gs.enter().append('g').attr('class', 'polygon-container');
+
+    gsExit = gs.exit();
+    gsExit.transition().duration(duration).remove();
+
+    vm._buildNestedPolygons(gs, gsEnter, gsExit);
+    vm._buildNestedVertexes(gs, gsEnter, gsExit);
+  };
+
+  Radar.prototype._buildNestedVertexes = function (update, enter, exit) {
+    var vm = this,
+        duration = vm._config.transitionDuration,
+        selector = 'circle.vertex',
+        toUpdate;
+
+    function appendHelper(selection) {
+      selection.append('circle').attr('class', 'vertex').attr('cx', vm._center.x).attr('cy', vm._center.y).attr('r', 4).attr('fill', function (d) {
+        return d.color;
+      }).call(updateHelper).on('mouseover', function (d) {
+        var x = d.xy[0] + 10,
+            y = d.xy[1] - 10;
+        vm._showTooltip(x, y, d.polygon, d.value);
+      }).on('mouseout', function () {
+        vm._hideTooltip();
+      });
+    }
+
+    function removeHelper(selection) {
+      selection.transition().duration(duration).attr('cx', vm._center.x).attr('cy', vm._center.y).remove();
+    }
+
+    function updateHelper(selection) {
+      selection.transition().duration(duration).attr('cx', function (d) {
+        return d.xy[0];
+      }).attr('cy', function (d) {
+        return d.xy[1];
+      });
+    }
+
+    function dataFunc(d) {
+      return d.values;
+    }
+
+    function keyFunc(d) {
+      return d.polygon + '-' + d.axis;
+    }
+
+    toUpdate = update.selectAll(selector).data(dataFunc, keyFunc);
+
+    toUpdate.call(updateHelper);
+
+    toUpdate.enter().call(appendHelper);
+
+    toUpdate.exit().call(removeHelper);
+
+    enter.selectAll(selector).data(dataFunc, keyFunc).enter().call(appendHelper);
+
+    exit.selectAll(selector).call(removeHelper);
+  };
+
+  /**
+   * Draw a tooltip at the given X, Y possition.
+   * @param  {int} x       The X coordinate
+   * @param  {int} y       The Y coordinate
+   * @param  {string} val1 The value to show as the first line
+   * @param  {string} val2 The value to show in the second line
+   * @return {selection}   Return the created tooltip as a D3 selection
+   */
+  Radar.prototype._showTooltip = function (x, y, val1, val2) {
+    var tt,
+        subtt,
+        bg,
+        bbox,
+        padding = 2,
+        vm = this,
+        svg = vm._chart._svg;
+
+    tt = svg.append('g').attr('class', 'tooltip').attr('opacity', 0);
+
+    bg = tt.append('rect').attr('class', 'tooltip-background');
+
+    subtt = tt.append('text').attr('y', y).attr('x', x).style('fill', vm._ifStyleDefaults('white')).style('font-family', vm._ifStyleDefaults('sans-serif'));
+
+    subtt.append('tspan').text(val2);
+
+    subtt.append('tspan').attr('dy', '-1.2em').attr('x', x).text(val1);
+
+    bbox = tt.node().getBBox();
+
+    bg.attr('x', bbox.x - padding).attr('y', bbox.y - padding).attr('width', bbox.width + padding * 2).attr('height', bbox.height + (padding + 2)).style('fill', vm._ifStyleDefaults('gray'));
+
+    tt.transition().duration(200).attr('opacity', .9);
+
+    return tt;
+  };
+
+  /**
+   * Remove the tooltip created by _showTooltip()
+   * @return {undefined}
+   */
+  Radar.prototype._hideTooltip = function () {
+    this._chart._svg.selectAll('g.tooltip').transition().duration(200).attr('opacity', 0).remove();
+  };
+
+  Radar.prototype._buildNestedPolygons = function (update, enter, exit) {
+    var vm = this,
+        duration = vm._config.transitionDuration,
+        selector = 'polygon.category',
+        toUpdate;
+
+    // Used for the transitions where the polygons expand from
+    // or shrink to the center.
+    function centerPoints(data) {
+      var center = [vm._center.x, vm._center.y].join(',');
+      return data.points.map(function () {
+        // All polygon's points move to the center.
+        return center;
+      }).join(' ');
+    }
+
+    function appendHelper(selection) {
+      selection.append('polygon').attr('class', 'category').attr('points', centerPoints).style('stroke', function (d) {
+        return d.color;
+      }).style('fill', function (d) {
+        return d.color;
+      }).style('fill-opacity', 0.4).style('stroke-width', vm._ifStyleDefaults('1px')).call(updateHelper);
+    }
+
+    function removeHelper(selection) {
+      selection.transition().duration(duration).attr('points', centerPoints).remove();
+    }
+
+    function updateHelper(selection) {
+      selection.transition().duration(duration).attr('points', function (d) {
+        return d.points.join(' ');
+      });
+    }
+
+    function dataFunc(d) {
+      return [d];
+    }
+
+    function keyFunc(d) {
+      return d.polygon;
+    }
+
+    toUpdate = update.selectAll(selector).data(dataFunc, keyFunc);
+
+    toUpdate.call(updateHelper);
+
+    toUpdate.enter().call(appendHelper);
+
+    toUpdate.exit().call(removeHelper);
+
+    enter.selectAll(selector).data(dataFunc, keyFunc).enter().call(appendHelper);
+
+    exit.selectAll(selector).call(removeHelper);
+  };
+
+  Radar.prototype.drawLegend = function () {
+    var vm = this,
+        cMap = vm._colorMap.list,
+        svg = vm._chart._svg,
+        at = vm._config.legend.at,
+        side = 14,
+        margin = 4,
+        legend,
+        newLegend;
+
+    legend = svg.selectAll('g.legend-item').data(cMap, function (d) {
+      return d.polygon;
+    }).attr('opacity', function (d) {
+      return vm._excludedPolygons.indexOf(d.polygon) > -1 ? .4 : 1;
+    });
+
+    newLegend = legend.enter().append('g').on('click', function (d) {
+      vm._excludedPolygons = vm._toggleList(vm._excludedPolygons, [d.polygon]);
+      vm.draw();
+    }).attr('class', 'legend-item');
+
+    newLegend.append('text').text(function (d) {
+      return d.polygon;
+    }).attr('x', at.x + side + margin).attr('y', function (d, i) {
+      return (side + margin) * i + at.y + side;
+    }).style('font-family', vm._ifStyleDefaults('sans-serif'));
+
+    newLegend.append('rect').attr('fill', function (d) {
+      return d.color;
+    }).attr('width', side).attr('height', side).attr('x', at.x).attr('y', function (d, i) {
+      return (side + margin) * i + at.y;
+    });
+  };
+
+  /**
+   * Return value if config styleDefaults is true, else null.
+   * @param  {string} value The value to use as default
+   * @return {string}       The value itself or null
+   */
+  Radar.prototype._ifStyleDefaults = function (value) {
+    return this._config.styleDefaults ? value : null;
+  };
+
+  /**
+   * Append items not present in base from items and pop those which are.
+   * @param  {array} base   Array to append to remove from.
+   * @param  {array} items  Items to be toogled (appended or removed).
+   * @return {array}        A new array.
+   */
+  Radar.prototype._toggleList = function (base, items) {
+    var newItems = items.filter(function (it) {
+      return base.indexOf(it) == -1;
+    });
+    return base.filter(function (it) {
+      return items.indexOf(it) == -1;
+    }).concat(newItems);
+  };
+
+  Radar.prototype.xOf = function (rads, value) {
+    var vm = this;
+    return vm._center.x + value * Math.cos(rads);
+  };
+
+  Radar.prototype.yOf = function (rads, value) {
+    var vm = this;
+    return vm._center.y + value * Math.sin(rads);
+  };
+
+  Radar.prototype.minMax = function (data) {
+    var vm = this;
+    return data.reduce(function (minMax, row) {
+      var val = parseInt(row[vm._config.valuesFrom]);
+      if (minMax.length == 0) {
+        return [val, val];
+      }
+      return [val < minMax[0] ? val : minMax[0], val > minMax[1] ? val : minMax[1]];
+    }, []);
+  };
+
+  // Build the data with coords.
+  Radar.prototype.dataForVisualization = function (data) {
+    var vm = this,
+        scale = vm._scale,
+        axisKey = vm._config.axesFrom,
+        valKey = vm._config.valuesFrom,
+        polygKey = vm._config.polygonsFrom,
+        axesHash = vm._axesData.hash;
+
+    return data.map(function (row) {
+      var axis = row[axisKey],
+          rads = axesHash[axis].rads,
+          polygon = row[polygKey],
+          val = row[valKey],
+          scVal = scale(val);
+      return {
+        xy: [vm.xOf(rads, scVal), vm.yOf(rads, scVal)],
+        value: val,
+        polygon: polygon,
+        axis: axis,
+        color: vm._colorMap.hash[polygon],
+        rawData: row
+      };
+    });
+  };
+
+  Radar.prototype.filter = function (fun) {
+    var vm = this;
+    vm._filter = fun;
+    return vm;
+  };
+
+  // DBOX internals.
+
+  Radar.prototype.chart = function (chart) {
+    var vm = this;
+    vm._chart = chart;
+    return vm;
+  };
+
+  Radar.prototype.data = function (data) {
+    var vm = this;
+    vm._data = data;
+    return vm;
+  };
+
+  Radar.prototype.scales = function (scales) {
+    var vm = this;
+    vm._scales = scales;
+    // We only need one scale.
+    vm._scale = vm._scales.x;
+    vm._scale.range([0, vm._radius]);
+    return vm;
+  };
+
+  Radar.prototype.axes = function (axes) {
+    var vm = this;
+    // TODO Do nothing?
+    return vm;
+  };
+
+  Radar.prototype.domains = function () {
+    var vm = this;
+    vm._calcDomains(vm._data);
+    return vm;
+  };
+
+  Radar.prototype._calcDomains = function (data) {
+    var vm = this;
+    vm._minMax = vm.minMax(data);
+    vm._scale.domain([0, vm._minMax[1]]);
+    vm._ticks = vm._scale.ticks(vm._config.ticks);
+    // Exclude 0 from ticks if it is the first element.
+    // We don't need to have the 0 actually rendered.
+    if (vm._ticks.length > 0 && vm._ticks[0] === 0) {
+      vm._ticks = vm._ticks.slice(1);
+    }
+  };
+
+  Radar.prototype.draw = function () {
+    var vm = this,
+        data = vm._data;
+
+    // Build the color map previusly to filtering in order to keep the
+    // association between colors and polygons even when some of them (the
+    // polygons) have been filtered out.
+    vm._colorMap = vm.buildColorMap(data);
+
+    // Apply the filter function, if it's present.
+    if (typeof vm._filter === 'function') {
+      data = data.filter(vm._filter);
+    }
+
+    // Filter out excluded polygons from.
+    if (vm._excludedPolygons.length > 0) {
+      data = data.filter(function (it) {
+        return vm._excludedPolygons.indexOf(it[vm._config.polygonsFrom]) == -1;
+      });
+    }
+
+    vm._calcDomains(data);
+    vm._axesData = vm.extractAxes(data);
+    vm._viewData = vm.dataForVisualization(data);
+
+    vm.drawTicks();
+    vm.drawAxes();
+    vm.drawAxesLabels();
+    vm.drawTicksLabels();
+    vm.drawPolygons();
+    vm.drawLegend();
+  };
+
+  return new Radar(config);
+};
+
+/*
+ * Simple Scatter chart
+ */
+
+var index$2 = function (config) {
+
+  function Scatter(config) {
+    var vm = this;
+    vm._config = config ? config : {};
+    vm._data = [];
+    vm._scales = {};
+    vm._axes = {};
+    vm._tip = d3.tip().attr('class', 'd3-tip');
+  }
+
+  //-------------------------------
+  //User config functions
+  Scatter.prototype.x = function (col) {
+    var vm = this;
+    vm._config.x = col;
+    return vm;
+  };
+
+  Scatter.prototype.y = function (col) {
+    var vm = this;
+    vm._config.y = col;
+    return vm;
+  };
+
+  Scatter.prototype.radius = function (radius) {
+    var vm = this;
+    vm._config.radius = radius;
+    return vm;
+  };
+
+  Scatter.prototype.radiusRange = function (radiusRange) {
+    var vm = this;
+    vm._config.radiusRange = radiusRange;
+    return vm;
+  };
+
+  Scatter.prototype.properties = function (properties) {
+    var vm = this;
+    vm._config.properties = properties;
+    return vm;
+  };
+
+  Scatter.prototype.color = function (col) {
+    var vm = this;
+    vm._config.color = col;
+    return vm;
+  };
+
+  Scatter.prototype.opacity = function (opacity) {
+    var vm = this;
+    vm._config.opacity = opacity;
+    return vm;
+  };
+
+  Scatter.prototype.tip = function (tip) {
+    var vm = this;
+    vm._config.tip = tip;
+    vm._tip.html(vm._config.tip);
+    return vm;
+  };
+
+  Scatter.prototype.end = function () {
+    var vm = this;
+    return vm._chart;
+  };
+
+  //-------------------------------
+  //Triggered by chart.js;
+  Scatter.prototype.chart = function (chart) {
+    var vm = this;
+    vm._chart = chart;
+    return vm;
+  };
+
+  Scatter.prototype.data = function (data) {
+    var vm = this;
+    vm._data = [];
+    data.forEach(function (d, i) {
+      var m = {};
+      m.datum = d;
+      m.x = vm._config.xAxis.scale == 'linear' ? +d[vm._config.x] : d[vm._config.x];
+      m.y = vm._config.yAxis.scale == 'linear' ? +d[vm._config.y] : d[vm._config.y];
+      m.color = vm._config.color.slice(0, 1) !== '#' ? d[vm._config.color] : vm._config.color;
+      m.radius = vm._config.radius !== undefined ? isNaN(vm._config.radius) ? +d[vm._config.radius] : vm._config.radius : 5;
+
+      if (vm._config.properties !== undefined && Array.isArray(vm._config.properties) && vm._config.properties.length > 0) {
+        vm._config.properties.forEach(function (p) {
+          m[p] = d[p];
+        });
+      }
+      vm._data.push(m);
+    });
+    return vm;
+  };
+
+  Scatter.prototype.scales = function (s) {
+    var vm = this;
+    vm._scales = s;
+    return vm;
+  };
+
+  Scatter.prototype.axes = function (a) {
+    var vm = this;
+    vm._axes = a;
+    return vm;
+  };
+
+  Scatter.prototype.domains = function () {
+    var vm = this;
+    var xMinMax = d3.extent(vm._data, function (d) {
+      return d.x;
+    }),
+        yMinMax = d3.extent(vm._data, function (d) {
+      return d.y;
+    }),
+        radiusMinMax = d3.extent(vm._data, function (d) {
+      return d.radius;
+    });
+
+    var arrOk = [0, 0];
+
+    if (vm._config.fixTo45) {
+      if (xMinMax[1] > yMinMax[1]) {
+        arrOk[1] = xMinMax[1];
+      } else {
+        arrOk[1] = yMinMax[1];
+      }
+
+      if (xMinMax[0] < yMinMax[0]) {
+        //yMinMax = xMinMax;
+        arrOk[0] = xMinMax[0];
+      } else {
+        arrOk[0] = yMinMax[0];
+      }
+
+      vm._scales.x.domain(arrOk).nice();
+      vm._scales.y.domain(arrOk).nice();
+      vm._scales.radius = d3.scaleLinear().range(vm._config.radiusRange != undefined ? vm._config.radiusRange : [5, 15]).domain(radiusMinMax).nice();
+    } else {
+      vm._scales.x.domain(xMinMax); //.nice();
+      vm._scales.y.domain(yMinMax); //.nice();
+      if (vm._scales.x.nice) {
+        vm._scales.x.nice();
+      }
+      if (vm._scales.y.nice) {
+        vm._scales.y.nice();
+      }
+      vm._scales.radius = d3.scaleLinear().range(vm._config.radiusRange != undefined ? vm._config.radiusRange : [5, 15]).domain(radiusMinMax).nice();
+      if (vm._config.xAxis && vm._config.xAxis.scale !== 'linear') {
+        vm._scales.x.domain(vm._data.map(function (m) {
+          return m.x;
+        }));
+      }
+      if (vm._config.yAxis && vm._config.yAxis.scale !== 'linear') {
+        vm._scales.y.domain(vm._data.map(function (m) {
+          return m.y;
+        }));
+      }
+    }
+
+    if (vm._config.xAxis.scaleDomain && Array.isArray(vm._config.xAxis.scaleDomain)) {
+      vm._scales.x.domain(vm._config.xAxis.scaleDomain);
+    }
+    if (vm._config.yAxis.scaleDomain && Array.isArray(vm._config.yAxis.scaleDomain)) {
+      vm._scales.y.domain(vm._config.yAxis.scaleDomain);
+    }
+    return vm;
+  };
+
+  Scatter.prototype.draw = function () {
+    var vm = this;
+
+    //Call the tip
+    vm._chart._svg.call(vm._tip);
+
+    var circles = vm._chart._svg.selectAll(".dot").data(vm._data)
+    //.data(vm._data, function(d){ return d.key})
+    .enter().append("circle").attr("class", "dot").attr("class", function (d, i) {
+      return d.properties !== undefined && d.properties.id !== undefined ? "scatter-" + d.properties.id : "scatter-" + i;
+    }).attr("r", function (d) {
+      return vm._scales.radius(d.radius);
+    }).attr("cx", function (d) {
+      if (vm._config.xAxis.scale == 'ordinal' || vm._config.xAxis.scale == 'band') return vm._scales.x(d.x) + Math.random() * (vm._scales.x.bandwidth() - d.size * 2);else return vm._scales.x(d.x);
+    }).attr("cy", function (d) {
+      if (vm._config.yAxis.scale == 'ordinal' || vm._config.yAxis.scale == 'band') return vm._scales.y(d.y) + Math.random() * (vm._scales.y.bandwidth() - d.size * 2);else return vm._scales.y(d.y);
+    }).style("fill", function (d) {
+      return d.color.slice(0, 1) !== '#' ? vm._scales.color(d.color) : d.color;
+    }).style("opacity", vm._config.opacity !== undefined ? vm._config.opacity : 1).on('mouseover', function (d, i) {
+      if (vm._config.mouseover) {
+        vm._config.mouseover.call(vm, d, i);
+      }
+      vm._tip.show(d, d3.select(this).node());
+    }).on('mouseout', function (d, i) {
+      if (vm._config.mouseout) {
+        vm._config.mouseout.call(this, d, i);
+      }
+      vm._tip.hide(d, d3.select(this).node());
+    }).on("click", function (d, i) {
+      if (vm._config.onclick) {
+        vm._config.onclick.call(this, d, i);
+      }
+    });
+
+    return vm;
+  };
+
+  Scatter.prototype.select = function (id) {
+    var vm = this;
+    return vm._chart._svg.select("circle.scatter-" + id);
+  };
+
+  Scatter.prototype.selectAll = function (id) {
+    var vm = this;
+    return vm._chart._svg.selectAll("circle");
+  };
+
+  return new Scatter(config);
+};
+
+/* Simple timeline example
+ * Single and multiline timelines
+ */
+
+var timeline = function (config) {
+
+  var parseDate = d3.timeParse('%Y-%m-%d');
+
+  function Timeline(config) {
+    var vm = this;
+    vm._config = config ? config : {};
+    vm._data = [];
+    vm._scales = {};
+    vm._axes = {};
+
+    vm._line = d3.line().curve(d3.curveBasis).x(function (d) {
+      return vm._scales.x(d.x);
+    }).y(function (d) {
+      return vm._scales.y(d.y);
+    });
+
+    vm._area = d3.area().curve(d3.curveBasis).x(function (d) {
+      if (d.alreadyScaled && d.alreadyScaled === true) {
+        return d.x;
+      } else {
+        return vm._scales.x(d.x);
+      }
+    }).y1(function (d) {
+      if (d.alreadyScaled && d.alreadyScaled === true) {
+        return d.y;
+      } else {
+        return vm._scales.y(d.y);
+      }
+    });
+  }
+
+  //-------------------------------
+  //User config functions
+  Timeline.prototype.x = function (col) {
+    var vm = this;
+    vm._config.x = col;
+    return vm;
+  };
+
+  Timeline.prototype.y = function (col) {
+    var vm = this;
+    vm._config.y = col;
+    return vm;
+  };
+
+  Timeline.prototype.series = function (arr) {
+    var vm = this;
+    vm._config.series = arr;
+    return vm;
+  };
+
+  Timeline.prototype.color = function (col) {
+    var vm = this;
+    vm._config.color = col;
+    return vm;
+  };
+
+  Timeline.prototype.end = function () {
+    var vm = this;
+    return vm._chart;
+  };
+
+  //-------------------------------
+  //Triggered by the chart.js;
+  Timeline.prototype.chart = function (chart) {
+    var vm = this;
+    vm._chart = chart;
+    return vm;
+  };
+
+  Timeline.prototype.data = function (data) {
+    var vm = this;
+
+    vm._data = data.map(function (d) {
+      d.x = parseDate(d[vm._config.x]);
+      d.color = d[vm._config.color];
+      delete d[vm._config.x];
+      return d;
+    });
+
+    vm._lines = vm._config.y ? vm._config.y : vm._config.series;
+
+    vm._lines = vm._lines.map(function (name) {
+      return {
+        name: name,
+        values: data.map(function (d) {
+          return { x: d.x, y: +d[name] };
+        })
+      };
+    });
+
+    return vm;
+  };
+
+  Timeline.prototype.scales = function (s) {
+    var vm = this;
+    vm._scales = s;
+    return vm;
+  };
+
+  Timeline.prototype.axes = function (a) {
+    var vm = this;
+    vm._axes = a;
+    return vm;
+  };
+
+  Timeline.prototype.domains = function () {
+    var vm = this;
+    vm._xMinMax = d3.extent(vm._data, function (d) {
+      return d.x;
+    });
+
+    vm._yMinMax = [d3.min(vm._lines, function (c) {
+      return d3.min(c.values, function (v) {
+        return v.y;
+      });
+    }), d3.max(vm._lines, function (c) {
+      return d3.max(c.values, function (v) {
+        return v.y;
+      });
+    })];
+
+    vm._scales.x.domain(vm._xMinMax);
+    vm._scales.y.domain(vm._yMinMax);
+
+    console.log(vm._scales.x.domain(), vm._chart._scales.x.domain());
+
+    vm._chart._scales = vm._scales;
+
+    return vm;
+  };
+
+  Timeline.prototype.draw = function () {
+    var vm = this;
+
+    var lines = vm._chart._svg.selectAll(".lines").data(vm._lines).enter().append("g").attr("class", "lines");
+
+    var path = vm._chart._svg.selectAll(".lines").append("path").attr("class", "line").attr("d", function (d) {
+      return vm._line(d.values);
+    }).style("stroke", function (d) {
+      if (d.name == "Airbus") {
+        return "rgb(000,255,000)";
+      } else {
+        return "#000";
+      }
+    });
+
+    var t = textures.lines().thicker();
+
+    vm._chart._svg.call(t);
+
+    vm._area.y0(vm._scales.y(vm._yMinMax[0]));
+
+    var areas = vm._chart._svg.selectAll(".areas").data(vm._lines).enter().append("g").attr("class", "areas");
+
+    var pathArea = vm._chart._svg.selectAll(".areas").append("path").attr("class", "area").attr("d", function (d) {
+      return vm._area(d.values);
+    }).attr("fill", t.url());
+
+    return vm;
+  };
+
+  return new Timeline(config);
+};
+
+/* 
+ * Simple SVG Treemap Chart
+ */
+
+var index$3 = function (config) {
   function Treemap(config) {
     var vm = this;
     vm._config = config ? config : {};
     vm._config._padding = 3;
-    vm._config._colorScale = d3$1.scaleOrdinal(d3$1.schemeCategory20c);
-    vm._config._format = d3$1.format(",.1f");
+    vm._config._colorScale = d3.scaleOrdinal(d3.schemeCategory20c);
+    vm._config._format = d3.format(",.1f");
     vm._config._labels = true;
     vm._config.tip = function (d) {
       return d.data.name + "\n" + vm._config._format(d.value);
@@ -1471,7 +2098,7 @@ var treemap$1 = function (config) {
     vm._data = [];
     vm._scales = {};
     vm._axes = {};
-    vm._tip = d3$1.tip().attr('class', 'd3-tip tip-treemap').direction('n').html(vm._config.tip);
+    vm._tip = d3.tip().attr('class', 'd3-tip tip-treemap').direction('n').html(vm._config.tip);
   }
 
   //-------------------------------
@@ -1489,7 +2116,7 @@ var treemap$1 = function (config) {
 
   Treemap.prototype.colorScale = function (arrayOfColors) {
     var vm = this;
-    vm._config._colorScale = d3$1.scaleOrdinal(arrayOfColors);
+    vm._config._colorScale = d3.scaleOrdinal(arrayOfColors);
     return vm;
   };
 
@@ -1515,9 +2142,9 @@ var treemap$1 = function (config) {
     return vm;
   };
 
-  Treemap.prototype.format = function (format$$1) {
+  Treemap.prototype.format = function (format) {
     var vm = this;
-    if (typeof format$$1 == 'function' || format$$1 instanceof Function) vm._config._format = format$$1;else vm._config._format = d3$1.format(format$$1);
+    if (typeof format == 'function' || format instanceof Function) vm._config._format = format;else vm._config._format = d3.format(format);
     return vm;
   };
 
@@ -1527,9 +2154,9 @@ var treemap$1 = function (config) {
     return vm;
   };
 
-  Treemap.prototype.tip = function (tip$$1) {
+  Treemap.prototype.tip = function (tip) {
     var vm = this;
-    vm._config.tip = tip$$1;
+    vm._config.tip = tip;
     vm._tip.html(vm._config.tip);
     return vm;
   };
@@ -1596,8 +2223,8 @@ var treemap$1 = function (config) {
     return data;
   };
 
-  function nestKey(nest$$1, key, callback) {
-    callback(null, nest$$1.key(function (d) {
+  function nestKey(nest, key, callback) {
+    callback(null, nest.key(function (d) {
       return d[key];
     }));
   }
@@ -1613,19 +2240,19 @@ var treemap$1 = function (config) {
           });
           try {
             if (!vm._config._keys) throw "nestBy() in layer was not configured";
-            var nested = d3$1.nest();
-            var queue$$1 = d3$1.queue();
+            var nested = d3.nest();
+            var queue = d3.queue();
             for (var i = 0; i < vm._config._keys.length; i++) {
-              queue$$1.defer(nestKey, nested, vm._config._keys[i]);
-            }queue$$1.awaitAll(function (error, nested) {
+              queue.defer(nestKey, nested, vm._config._keys[i]);
+            }queue.awaitAll(function (error, nested) {
               var nestedData = nested[0].rollup(function (leaves) {
-                return d3$1.sum(leaves, function (d) {
+                return d3.sum(leaves, function (d) {
                   return d[vm._config._size];
                 });
               }).entries(data);
               var aux = {};
               aux.key = 'data';
-              aux.values = _$1.cloneDeep(nestedData); // WARN: Lodash dependency
+              aux.values = _.cloneDeep(nestedData); // WARN: Lodash dependency
               data = vm.formatNestedData(aux);
               vm._data = data;
             });
@@ -1653,9 +2280,9 @@ var treemap$1 = function (config) {
     var vm = this;
     vm._chart._svg.call(vm._tip);
 
-    var treemap$$1 = d3$1.treemap().tile(d3$1.treemapResquarify).size([vm._chart._width, vm._chart._height]).round(true).paddingInner(vm._config._padding);
+    var treemap = d3.treemap().tile(d3.treemapResquarify).size([vm._chart._width, vm._chart._height]).round(true).paddingInner(vm._config._padding);
 
-    var root = d3$1.hierarchy(vm._data).eachBefore(function (d) {
+    var root = d3.hierarchy(vm._data).eachBefore(function (d) {
       d.data.id = (d.parent ? d.parent.data.id + "." : "") + d.data.name;
     }).sum(function (d) {
       return d[vm._config._size];
@@ -1663,7 +2290,7 @@ var treemap$1 = function (config) {
       return b.height - a.height || b.value - a.value;
     });
 
-    treemap$$1(root);
+    treemap(root);
 
     var cell = vm._chart._svg.selectAll("g").data(root.leaves()).enter().append("g").attr("transform", function (d) {
       return "translate(" + d.x0 + "," + d.y0 + ")";
@@ -1704,737 +2331,17 @@ var treemap$1 = function (config) {
       /*if(vm._config.data.mouseover){
         vm._config.data.mouseover.call(vm, d,i);
       }*/
-      vm._tip.show(d, d3$1.select(this).node());
+      vm._tip.show(d, d3.select(this).node());
     }).on('mouseout', function (d) {
       /*if(vm._config.data.mouseout){
         vm._config.data.mouseout.call(this, d,i);
       }*/
-      vm._tip.hide(d, d3$1.select(this).node());
+      vm._tip.hide(d, d3.select(this).node());
     });
 
     return vm;
   };
   return new Treemap(config);
-};
-
-/*
- * Simple Bar chart
- */
-
-var barchart = function (config) {
-
-  function Bars(config) {
-    var vm = this;
-    vm._config = config ? config : {};
-    vm._data = [];
-    vm._config.colorScale = d3$1.schemeCategory20c;
-    vm._config._format = function (d) {
-      if (d % 1 == 0) {
-        return d3$1.format(",.0f")(d);
-      } else if (d < 1 && d > 0) {
-        return d3$1.format(",.2f")(d);
-      } else {
-        return d3$1.format(",.1f")(d);
-      }
-    };
-    vm._scales = {};
-    vm._axes = {};
-    //vm._tip = d3.tip().attr('class', 'd3-tip tip-bars').html(vm._config.data.tip || function(d){ return d;});
-    vm._tip = d3$1.tip().attr('class', 'd3-tip tip-treemap').direction('n').html(vm._config.tip || function (d) {
-      return vm._config._format(d[vm._config.y]);
-    });
-  }
-
-  //-------------------------------
-  //User config functions
-  Bars.prototype.x = function (columnName) {
-    var vm = this;
-    vm._config.x = columnName;
-    return vm;
-  };
-
-  Bars.prototype.y = function (columnName) {
-    var vm = this;
-    vm._config.y = columnName;
-    return vm;
-  };
-
-  Bars.prototype.color = function (columnName) {
-    var vm = this;
-    vm._config.color = columnName;
-    return vm;
-  };
-
-  Bars.prototype.end = function () {
-    var vm = this;
-    return vm._chart;
-  };
-
-  Bars.prototype.colorScale = function (colorScale) {
-    var vm = this;
-    if (Array.isArray(colorScale)) {
-      vm._config.colorScale = colorScale;
-    } else {
-      vm._scales.color = colorScale;
-      vm._config.colorScale = colorScale.range();
-    }
-    return vm;
-  };
-
-  Bars.prototype.format = function (format$$1) {
-    var vm = this;
-    if (typeof format$$1 == 'function' || format$$1 instanceof Function) vm._config._format = format$$1;else vm._config._format = d3$1.format(format$$1);
-    return vm;
-  };
-
-  //-------------------------------
-  //Triggered by the chart.js;
-  Bars.prototype.chart = function (chart) {
-    var vm = this;
-    vm._chart = chart;
-    return vm;
-  };
-
-  Bars.prototype.data = function (data) {
-    var vm = this;
-    vm._data = data.map(function (d) {
-      if (d[vm._config.x] == Number(d[vm._config.x])) d[vm._config.x] = +d[vm._config.x];
-      if (d[vm._config.y] == Number(d[vm._config.y])) d[vm._config.y] = +d[vm._config.y];
-      return d;
-    });
-    return vm;
-  };
-
-  Bars.prototype.scales = function (s) {
-    var vm = this;
-    //vm._scales = s;
-    /* Use
-    * vm._config.x
-    * vm._config.xAxis.scale
-    * vm._config.y
-    * vm._config.yAxis.scale
-    * vm._data
-    */
-    /* Generate x scale */
-    var config = {
-      column: vm._config.x,
-      type: vm._config.xAxis.scale,
-      range: [0, vm._chart._width],
-      minZero: true
-    };
-    vm._scales.x = vm._chart.generateScale(vm._data, config);
-
-    /* Generate y scale */
-    config = {
-      column: vm._config.y,
-      type: vm._config.yAxis.scale,
-      range: [vm._chart._height, 0],
-      minZero: true
-    };
-    vm._scales.y = vm._chart.generateScale(vm._data, config);
-    vm._chart._scales.x = vm._scales.x;
-    vm._chart._scales.y = vm._scales.y;
-
-    if (!vm._scales.color) vm._scales.color = d3$1.scaleOrdinal(vm._config.colorScale);
-    return vm;
-  };
-
-  Bars.prototype.axes = function (a) {
-    var vm = this;
-    vm._axes = a;
-    return vm;
-  };
-
-  Bars.prototype.domains = function () {
-    var vm = this;
-    return vm;
-  };
-
-  Bars.prototype.draw = function () {
-    var vm = this;
-    vm._chart._svg.call(vm._tip);
-
-    if (vm._config.xAxis.enabled) {
-      vm._chart._svg.append("g").attr("class", "xAxis axis").attr("transform", "translate(0," + vm._chart._height + ")").call(d3$1.axisBottom(vm._scales.x).tickValues(vm._config.xAxis.tickValues).tickFormat(vm._config.xAxis.tickFormat));
-      //vm._chart._svg.selectAll(".xAxis.axis text").attr("transform", "translate(0,10)rotate(-20)");
-    }
-
-    if (vm._config.yAxis.enabled) {
-      if (vm._config.yAxis.position == 'right') {
-        var yAxis = d3$1.axisRight(vm._scales.y).ticks(vm._config.yAxis.ticks).tickValues(vm._config.yAxis.tickValues).tickFormat(vm._config.yAxis.tickFormat);
-      } else {
-        var yAxis = d3$1.axisLeft(vm._scales.y).ticks(vm._config.yAxis.ticks).tickValues(vm._config.yAxis.tickValues).tickFormat(vm._config.yAxis.tickFormat);
-      }
-      var axisY = vm._chart._svg.append("g").attr("class", "yAxis axis");
-      if (vm._config.yAxis.position == 'right') axisY.attr("transform", "translate(" + vm._chart._width + ",0)");
-      axisY.call(yAxis);
-      /*
-      Axis Title
-      .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 6)
-        .attr("dy", "0.71em")
-        .attr("text-anchor", "end")
-        .text("Frequency");
-      */
-    }
-
-    vm._chart._svg.selectAll(".bar").data(vm._data).enter().append("rect").attr("class", "bar").attr("x", function (d) {
-      return vm._config.xAxis.scale == 'linear' && vm._config.yAxis.scale == 'linear' ? 0 : vm._scales.x(d[vm._config.x]);
-    }).attr("y", function (d) {
-      return vm._scales.y(d[vm._config.y]);
-    }).attr("width", function (d) {
-      return vm._scales.x.bandwidth ? vm._scales.x.bandwidth() : vm._scales.x(d[vm._config.x]);
-    }).attr("height", function (d) {
-      return vm._chart._height - vm._scales.y(d[vm._config.y]);
-    }).attr("fill", function (d) {
-      return vm._scales.color(d[vm._config.color]);
-    }).style("opacity", 0.9).on('mouseover', function (d) {
-      vm._tip.show(d, d3$1.select(this).node());
-    }).on('mouseout', function () {
-      vm._tip.hide();
-    }).on('click', function () {});
-    return vm;
-  };
-
-  return new Bars(config);
-};
-
-/*
- * Build a radar chart.
- */
-
-var radar = function (config) {
-  function Radar(config) {
-    var vm = this,
-        size;
-
-    vm.CIRCLE_RADIANS = 2 * Math.PI;
-
-    // The first axis must be at the circle's top.
-    vm.RADIANS_TO_ROTATE = vm.CIRCLE_RADIANS / -4;
-
-    vm._config = config ? config : {};
-    vm._data = [];
-    vm._scales = {};
-    vm._axes = {};
-    vm._axesData = {};
-    vm._filter = null;
-    vm._minMax = [0, 0];
-    vm._viewData = [];
-    vm._colorMap = {};
-    vm._ticks = 0;
-    vm._scale = null;
-
-    // Set defaults.
-    if (!vm._config.ticks) {
-      vm._config.ticks = 10;
-    }
-
-    if (!vm._config.transitionDuration) {
-      vm._config.transitionDuration = 400;
-    }
-
-    if (!vm._config.axisLabelMargin) {
-      vm._config.axisLabelMargin = 24;
-    }
-
-    if (!vm._config.legend) {
-      vm._config.legend = {
-        enable: true
-      };
-    }
-
-    if (!vm._config.legend.at) {
-      vm._config.legend.at = {
-        x: 20,
-        y: 20
-      };
-    }
-
-    // Calculate basic data.
-    size = vm._config.size;
-
-    vm._center = {
-      x: size.width / 2 - size.margin.left,
-      y: size.height / 2 - size.margin.top
-    };
-
-    vm._radius = Math.min((size.width - size.margin.left - size.margin.right) / 2, (size.height - size.margin.top - size.margin.bottom) / 2);
-  }
-
-  // User API.
-
-  Radar.prototype.polygonsFrom = function (column) {
-    var vm = this;
-    vm._config.polygonsFrom = column;
-    return vm;
-  };
-
-  Radar.prototype.axesFrom = function (column) {
-    var vm = this;
-    vm._config.axesFrom = column;
-    return vm;
-  };
-
-  Radar.prototype.valuesFrom = function (column) {
-    var vm = this;
-    vm._config.valuesFrom = column;
-    return vm;
-  };
-
-  Radar.prototype.ticks = function (ticks) {
-    var vm = this;
-    vm._config.ticks = ticks;
-    return vm;
-  };
-
-  Radar.prototype.colors = function (colors) {
-    var vm = this;
-    vm._config.colors = colors;
-    return vm;
-  };
-
-  Radar.prototype.end = function () {
-    var vm = this;
-    return vm._chart;
-  };
-
-  // Internal helpers.
-
-  Radar.prototype.drawTicks = function () {
-    var vm = this,
-        svg = vm._chart._svg,
-        dur = vm._config.transitionDuration,
-        sel;
-
-    sel = svg.selectAll('circle.tick').data(vm._ticks);
-
-    sel.transition().duration(dur).attr('r', function (d) {
-      return vm._scale(d);
-    });
-
-    sel.enter().append('circle').classed('tick', true).attr('cx', vm._center.x).attr('cy', vm._center.y).style('fill', 'none').style('stroke', 'gray').attr('r', function (d) {
-      return vm._scale(d);
-    }).attr('opacity', 0).transition().duration(dur).attr('opacity', 1);
-
-    sel.exit().transition().duration(dur).attr('opacity', 0).remove();
-  };
-
-  Radar.prototype.drawTicksLabels = function () {
-    var vm = this,
-        svg = vm._chart._svg,
-        margin = 2,
-        dur = vm._config.transitionDuration,
-        sel;
-
-    sel = svg.selectAll('text.tick-label').data(vm._ticks);
-
-    sel.transition().duration(dur).text(function (d) {
-      return d;
-    }).attr('y', function (d) {
-      return vm._center.y - margin - vm._scale(d);
-    });
-
-    sel.enter().append('text').text(function (d) {
-      return d;
-    }).attr('class', 'tick-label').attr('x', vm._center.x + margin).attr('y', function (d) {
-      return vm._center.y - margin - vm._scale(d);
-    }).attr('fill', 'gray').style('font-family', 'sans-serif').attr('opacity', 0).transition().duration(dur).attr('opacity', 1);
-
-    sel.exit().transition().duration(dur).attr('opacity', 0).remove();
-  };
-
-  Radar.prototype.extractAxes = function (data) {
-    var result,
-        vm = this,
-        axes = vm._config.axesFrom,
-        radiansPerAxis;
-
-    result = data.reduce(function (prev, item) {
-      return prev.indexOf(item[axes]) > -1 ? prev : prev.concat(item[axes]);
-    }, []);
-
-    radiansPerAxis = vm.CIRCLE_RADIANS / result.length;
-
-    result = result.map(function (item, idx) {
-      return {
-        axis: item,
-        rads: idx * radiansPerAxis + vm.RADIANS_TO_ROTATE
-      };
-    });
-
-    return {
-      list: result,
-      hash: result.reduce(function (hashed, el) {
-        hashed[el.axis] = el;
-        return hashed;
-      }, {})
-    };
-  };
-
-  Radar.prototype.buildColorMap = function (data) {
-    var vm = this,
-        colors = vm._config.colors;
-    return data.reduce(function (cMap, row) {
-      var polyg = row[vm._config.polygonsFrom],
-          cIdx = cMap.index.indexOf(polyg);
-
-      if (cIdx == -1) {
-        cIdx = cMap.index.push(polyg) - 1;
-        cMap.hash[polyg] = colors[cIdx];
-        cMap.list.push({ polygon: polyg, color: colors[cIdx] });
-      }
-      return cMap;
-    }, { index: [], hash: {}, list: [] });
-  };
-
-  Radar.prototype.drawAxes = function () {
-    var vm = this,
-        svg = vm._chart._svg,
-        duration = vm._config.transitionDuration,
-        selection;
-
-    selection = svg.selectAll('line.axis').data(vm._axesData.list, function (d) {
-      return d.axis;
-    });
-
-    selection.enter().append('line').classed('axis', true).attr('x1', vm._center.x).attr('y1', vm._center.y).style('stroke', 'gray').attr('x2', vm._center.x).attr('y2', vm._center.y).transition().duration(duration).attr('x2', function (d) {
-      return vm.xOf(d.rads, vm._radius + 8);
-    }).attr('y2', function (d) {
-      return vm.yOf(d.rads, vm._radius + 8);
-    });
-
-    selection.transition().duration(duration).attr('x2', function (d) {
-      return vm.xOf(d.rads, vm._radius + 8);
-    }).attr('y2', function (d) {
-      return vm.yOf(d.rads, vm._radius + 8);
-    });
-
-    selection.exit().transition().duration(duration).attr('x2', vm._center.x).attr('y2', vm._center.y).remove();
-  };
-
-  Radar.prototype.drawAxesLabels = function () {
-    var vm = this,
-        svg = vm._chart._svg,
-        duration = vm._config.transitionDuration,
-        fromCenter = vm._radius + vm._config.axisLabelMargin,
-        labels;
-
-    labels = svg.selectAll('text.axis-label').data(vm._axesData.list, function (d) {
-      return d.axis;
-    });
-
-    labels.transition().duration(duration).attr('x', function (d) {
-      return vm.xOf(d.rads, fromCenter);
-    }).attr('y', function (d) {
-      return vm.yOf(d.rads, fromCenter);
-    });
-
-    labels.enter().append('text').attr('class', 'axis-label').attr('text-anchor', 'middle').attr('fill', 'gray').style('font-family', 'sans-serif').text(function (d) {
-      return d.axis;
-    }).attr('x', function (d) {
-      return vm.xOf(d.rads, fromCenter);
-    }).attr('y', function (d) {
-      return vm.yOf(d.rads, fromCenter);
-    }).attr('opacity', 0).transition().duration(duration).attr('opacity', 1);
-
-    labels.exit().transition().duration(duration).attr('opacity', 0).remove();
-  };
-
-  Radar.prototype.drawPolygons = function () {
-    var vm = this,
-        data = vm._viewData,
-        svg = vm._chart._svg,
-        duration = vm._config.transitionDuration,
-        groupedData,
-        gs,
-        gsExit,
-        gsEnter;
-
-    // Prepare the data.
-    groupedData = data.reduce(function (bundle, row) {
-      var polygIdx = bundle.keys.indexOf(row.polygon);
-      if (polygIdx == -1) {
-        polygIdx = bundle.keys.push(row.polygon) - 1;
-        bundle.polygons.push({
-          polygon: row.polygon,
-          color: row.color,
-          points: [],
-          values: []
-        });
-      }
-      bundle.polygons[polygIdx].values.push(row);
-      bundle.polygons[polygIdx].points.push(row.xy.join(','));
-      return bundle;
-    }, { keys: [], polygons: [] }).polygons;
-
-    gs = svg.selectAll('g.polygon-container').data(groupedData, function (d) {
-      return d.polygon + '-container';
-    });
-
-    gsEnter = gs.enter().append('g').attr('class', 'polygon-container');
-
-    gsExit = gs.exit();
-    gsExit.transition().duration(duration).remove();
-
-    vm._buildNestedVertexes(gs, gsEnter, gsExit);
-    vm._buildNestedPolygons(gs, gsEnter, gsExit);
-  };
-
-  Radar.prototype._buildNestedVertexes = function (update, enter, exit) {
-    var vm = this,
-        duration = vm._config.transitionDuration,
-        selector = 'circle.vertex',
-        toUpdate;
-
-    function appendHelper(selection) {
-      selection.append('circle').attr('class', 'vertex').attr('cx', vm._center.x).attr('cy', vm._center.y).attr('r', 4).attr('fill', function (d) {
-        return d.color;
-      }).call(updateHelper);
-    }
-
-    function removeHelper(selection) {
-      selection.transition().duration(duration).attr('cx', vm._center.x).attr('cy', vm._center.y).remove();
-    }
-
-    function updateHelper(selection) {
-      selection.transition().duration(duration).attr('cx', function (d) {
-        return d.xy[0];
-      }).attr('cy', function (d) {
-        return d.xy[1];
-      });
-    }
-
-    function dataFunc(d) {
-      return d.values;
-    }
-
-    function keyFunc(d) {
-      return d.polygon + '-' + d.axis;
-    }
-
-    toUpdate = update.selectAll(selector).data(dataFunc, keyFunc);
-
-    toUpdate.call(updateHelper);
-
-    toUpdate.enter().call(appendHelper);
-
-    toUpdate.exit().call(removeHelper);
-
-    enter.selectAll(selector).data(dataFunc, keyFunc).enter().call(appendHelper);
-
-    exit.selectAll(selector).call(removeHelper);
-  };
-
-  Radar.prototype._buildNestedPolygons = function (update, enter, exit) {
-    var vm = this,
-        duration = vm._config.transitionDuration,
-        selector = 'polygon.category',
-        toUpdate;
-
-    // Used for the transitions where the polygons expand from
-    // or shrink to the center.
-    function centerPoints(data) {
-      var center = [vm._center.x, vm._center.y].join(',');
-      return data.points.map(function () {
-        // All polygon's points move to the center.
-        return center;
-      }).join(' ');
-    }
-
-    function appendHelper(selection) {
-      selection.append('polygon').attr('class', 'category').attr('points', centerPoints).style('stroke', function (d) {
-        return d.color;
-      }).style('fill', function (d) {
-        return d.color;
-      }).style('fill-opacity', 0.4).style('stroke-width', '1px').call(updateHelper);
-    }
-
-    function removeHelper(selection) {
-      selection.transition().duration(duration).attr('points', centerPoints).remove();
-    }
-
-    function updateHelper(selection) {
-      selection.transition().duration(duration).attr('points', function (d) {
-        return d.points.join(' ');
-      });
-    }
-
-    function dataFunc(d) {
-      return [d];
-    }
-
-    function keyFunc(d) {
-      return d.polygon;
-    }
-
-    toUpdate = update.selectAll(selector).data(dataFunc, keyFunc);
-
-    toUpdate.call(updateHelper);
-
-    toUpdate.enter().call(appendHelper);
-
-    toUpdate.exit().call(removeHelper);
-
-    enter.selectAll(selector).data(dataFunc, keyFunc).enter().call(appendHelper);
-
-    exit.selectAll(selector).call(removeHelper);
-  };
-
-  Radar.prototype.drawLegend = function () {
-    var vm = this,
-        cMap = vm._colorMap.list,
-        svg = vm._chart._svg,
-        at = vm._config.legend.at,
-        side = 14,
-        margin = 4,
-        legend,
-        newLegend;
-
-    legend = svg.selectAll('g.legend-item').data(cMap, function (d) {
-      return d.polygon;
-    });
-
-    newLegend = legend.enter().append('g').attr('class', 'legend-item');
-
-    newLegend.append('text').text(function (d) {
-      return d.polygon;
-    }).attr('x', at.x + side + margin).attr('y', function (d, i) {
-      return (side + margin) * i + at.y + side;
-    }).style('font-family', 'sans-serif');
-
-    newLegend.append('rect').attr('fill', function (d) {
-      return d.color;
-    }).attr('width', side).attr('height', side).attr('x', at.x).attr('y', function (d, i) {
-      return (side + margin) * i + at.y;
-    });
-  };
-
-  Radar.prototype.xOf = function (rads, value) {
-    var vm = this;
-    return vm._center.x + value * Math.cos(rads);
-  };
-
-  Radar.prototype.yOf = function (rads, value) {
-    var vm = this;
-    return vm._center.y + value * Math.sin(rads);
-  };
-
-  Radar.prototype.minMax = function (data) {
-    var vm = this;
-    return data.reduce(function (minMax, row) {
-      var val = parseInt(row[vm._config.valuesFrom]);
-      if (minMax.length == 0) {
-        return [val, val];
-      }
-      return [val < minMax[0] ? val : minMax[0], val > minMax[1] ? val : minMax[1]];
-    }, []);
-  };
-
-  // Build the data with coords.
-  Radar.prototype.dataForVisualization = function (data) {
-    var vm = this,
-        scale = vm._scale,
-        axisKey = vm._config.axesFrom,
-        valKey = vm._config.valuesFrom,
-        polygKey = vm._config.polygonsFrom,
-        axesHash = vm._axesData.hash;
-
-    return data.map(function (row) {
-      var axis = row[axisKey],
-          rads = axesHash[axis].rads,
-          polygon = row[polygKey],
-          val = scale(row[valKey]);
-      return {
-        xy: [vm.xOf(rads, val), vm.yOf(rads, val)],
-        value: val,
-        polygon: polygon,
-        axis: axis,
-        color: vm._colorMap.hash[polygon],
-        rawData: row
-      };
-    });
-  };
-
-  Radar.prototype.filter = function (fun) {
-    var vm = this;
-    vm._filter = fun;
-    return vm;
-  };
-
-  // DBOX internals.
-
-  Radar.prototype.chart = function (chart) {
-    var vm = this;
-    vm._chart = chart;
-    return vm;
-  };
-
-  Radar.prototype.data = function (data) {
-    var vm = this;
-    vm._data = data;
-    return vm;
-  };
-
-  Radar.prototype.scales = function (scales) {
-    var vm = this;
-    vm._scales = scales;
-    // We only need one scale.
-    vm._scale = vm._scales.x;
-    vm._scale.range([0, vm._radius]);
-    return vm;
-  };
-
-  Radar.prototype.axes = function (axes) {
-    var vm = this;
-    // TODO Do nothing?
-    return vm;
-  };
-
-  Radar.prototype.domains = function () {
-    var vm = this;
-    vm._calcDomains(vm._data);
-    return vm;
-  };
-
-  Radar.prototype._calcDomains = function (data) {
-    var vm = this;
-    vm._minMax = vm.minMax(data);
-    vm._scale.domain(vm._minMax);
-    vm._ticks = vm._scale.ticks(vm._config.ticks);
-    // Exclude 0 from ticks if it is the first element.
-    // We don't need to have the 0 actually rendered.
-    if (vm._ticks.length > 0 && vm._ticks[0] === 0) {
-      vm._ticks = vm._ticks.slice(1);
-    }
-  };
-
-  Radar.prototype.draw = function () {
-    var vm = this,
-        data = vm._data;
-
-    // Build the color map previusly to filtering in order to keep the
-    // association between colors and polygons even when some of them (the
-    // polygons) have been filtered out.
-    vm._colorMap = vm.buildColorMap(data);
-
-    if (typeof vm._filter === 'function') {
-      data = data.filter(vm._filter);
-    }
-    vm._calcDomains(data);
-    vm._axesData = vm.extractAxes(data);
-    vm._viewData = vm.dataForVisualization(data);
-
-    vm.drawTicks();
-    vm.drawAxes();
-    vm.drawAxesLabels();
-    vm.drawTicksLabels();
-    vm.drawPolygons();
-    vm.drawLegend();
-  };
-
-  return new Radar(config);
 };
 
 /*
@@ -2449,12 +2356,12 @@ var radar = function (config) {
 /* Core */
 
 exports.chart = chart;
-exports.scatter = scatter;
-exports.timeline = timeline;
-exports.heatmap = heatmap;
-exports.treemap = treemap$1;
-exports.bars = barchart;
+exports.bars = index;
+exports.heatmap = index$1;
 exports.radar = radar;
+exports.scatter = index$2;
+exports.timeline = timeline;
+exports.treemap = index$3;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 
