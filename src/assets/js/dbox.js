@@ -662,7 +662,7 @@ var chart = function (config) {
 /*
  * Simple Bar chart
  */
-var index = function (config) {
+var bars = function (config) {
 
   function Bars(config) {
     var vm = this;
@@ -859,7 +859,7 @@ var index = function (config) {
  * Heatmap Chart
  */
 
-var index$1 = function (config) {
+var heatmap = function (config) {
 
   function Heatmap(config) {
     var vm = this;
@@ -1690,7 +1690,7 @@ var radar = function (config) {
  * Simple Scatter chart
  */
 
-var index$2 = function (config) {
+var scatter = function (config) {
 
   function Scatter(config) {
     var vm = this;
@@ -2084,7 +2084,7 @@ var timeline = function (config) {
  * Simple SVG Treemap Chart
  */
 
-var index$3 = function (config) {
+var treemap = function (config) {
   function Treemap(config) {
     var vm = this;
     vm._config = config ? config : {};
@@ -2356,12 +2356,12 @@ var index$3 = function (config) {
 /* Core */
 
 exports.chart = chart;
-exports.bars = index;
-exports.heatmap = index$1;
+exports.bars = bars;
+exports.heatmap = heatmap;
 exports.radar = radar;
-exports.scatter = index$2;
+exports.scatter = scatter;
 exports.timeline = timeline;
-exports.treemap = index$3;
+exports.treemap = treemap;
 
 Object.defineProperty(exports, '__esModule', { value: true });
 

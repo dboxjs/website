@@ -7,7 +7,7 @@
     li
       img.displayed(src='assets/images/logo-gr.png', alt='DBOX')
 
-  p.tex-center Dbox es una biblioteca que utiliza el poder de D3.js para realizar gráficas dinámicas predefinidas. Pensada para el desarrollo de visualizaciones interactivas, permite crear gráficos generales personalizables sin tener que empezar el trabajo desde cero, incluyendo interesantes funcionalidades.
+  p.tex-center Dbox es una biblioteca que utiliza el poder de D3.js para realizar gráficas dinámicas predefinidas. 
   div.btn-center
     button.hide.btn.btn-primary(type='submit') DESCARGA
     button.hide.btn.btn-primary(type='submit') DOCUMENTACIÓN
@@ -56,41 +56,33 @@
     .row.charts
       .col-xs-6.col-md-4
         div
-          div.chart-img(style="background-image: url('assets/images/scatter.png')", alt='Alda Facio' ui-sref="dbox.scatter" ui-sref-opts="{reload: true}")
-          div.chart-title Scatter
-      .col-xs-6.col-md-4
-        div
-          div.chart-img(style="background-image: url('assets/images/svg_treemap.png')", alt='SVG Treemap' ui-sref="dbox.treemap" ui-sref-opts="{reload: true}")
-          div.chart-title SVG Treemap
-
-      .col-xs-6.col-md-4
-        div
-          div.chart-img(style="background-image: url('assets/images/map.png')", alt='Map Mexico' ui-sref="dbox.map" ui-sref-opts="{reload: true}")
-          div.chart-title Map
-
-      .col-xs-6.col-md-4
-        div
           div.chart-img(style="background-image: url('assets/images/bars.png')", alt='Bar chart' ui-sref="dbox.bars" ui-sref-opts="{reload: true}")
           div.chart-title Bars
-
-      .col-xs-6.col-md-4
-        div
-          div.chart-img(style="background-image: url('assets/images/timeline.png')", alt='Timeline' ui-sref="dbox.timeline" ui-sref-opts="{reload: true}")
-          div.chart-title Timeline
 
       .col-xs-6.col-md-4
         div
           div.chart-img(style="background-image: url('assets/images/heatmap.png')", alt='Heatmap' ui-sref="dbox.heatmap" ui-sref-opts="{reload: true}")
           div.chart-title Heatmap
 
-
-      .col-xs-6.col-md-4.hide
+      .col-xs-6.col-md-4
         div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
+          div.chart-img(style="background-image: url('assets/images/radar.png')", alt='Radar' ui-sref="dbox.radar" ui-sref-opts="{reload: true}")
+          div.chart-title Radar
 
-      .col-xs-6.col-md-4.hide
+      .col-xs-6.col-md-4
         div
-          img.img-responsive(src='assets/images/chart01.png', alt='Alda Facio')
+          div.chart-img(style="background-image: url('assets/images/scatter.png')", alt='Alda Facio' ui-sref="dbox.scatter" ui-sref-opts="{reload: true}")
+          div.chart-title Scatter
+      
+      .col-xs-6.col-md-4
+        div
+          div.chart-img(style="background-image: url('assets/images/timeline.png')", alt='Timeline' ui-sref="dbox.timeline" ui-sref-opts="{reload: true}")
+          div.chart-title Timeline
+          
+      .col-xs-6.col-md-4
+        div
+          div.chart-img(style="background-image: url('assets/images/svg_treemap.png')", alt='SVG Treemap' ui-sref="dbox.treemap" ui-sref-opts="{reload: true}")
+          div.chart-title SVG Treemap
 
 
 footer
@@ -119,7 +111,8 @@ footer
       p DESARROLLO
       p.linea-footer _________
       img.mar-git(src='assets/images/logo-git.png', alt='Github')
-      a.decoration(href='https://github.com/dboxjs/dbox', title='Github') https://github.com/dboxjs/dbox
+      br
+      a.decoration(href='https://github.com/dboxjs', title='Github') https://github.com/dboxjs
 
 
 
