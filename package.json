@@ -1,10 +1,26 @@
 {
-  "name": "dboxLibrary",
-  "version": "0.0.0",
-  "dependencies": {
-  },
+  "name": "@dboxjs/website",
+  "version": "0.0.1",
+  "description": "DboxJS main website with examples",
   "scripts": {
+    "start": "gulp serve",
     "test": "gulp test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dboxjs/website.git"
+  },
+  "keywords": [
+    "d3",
+    "dbox",
+    "dboxjs"
+  ],
+  "author": "DboxJS",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dboxjs/website/issues"
+  },
+  "dependencies": {
   },
   "devDependencies": {
     "browser-sync": "~2.9.11",
