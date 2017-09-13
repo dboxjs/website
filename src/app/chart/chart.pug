@@ -23,9 +23,7 @@
         button.chart-class.icon-chart10.style-none &#xe909;
 
 .container 
-  p.des HISTOGRAMA 
-  //- img.img-responsive.hidden-xs-mt.banner(src="assets/images/chart.png")
-  //- img.img-responsive.visible-xs-mt.hidden-sm.banner(src="assets/images/chart2.png")
+  p.des HISTOGRAMA
   div
     div(id="grafica-{{grafica}}" ng-show="$index+1 == chart.chartNumber" ng-repeat="grafica in chart.graficas")
       h1 {{grafica}}
