@@ -27,7 +27,8 @@
     "textures": "^1.0.5"
   },
   "devDependencies": {
-    "angular-mocks": "~1.5.3"
+    "angular-mocks": "~1.5.3",
+    "angular-translate": "^2.15.2"
   },
   "overrides": {
     "bootstrap": {
