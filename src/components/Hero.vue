@@ -1,6 +1,6 @@
 <template>
   <div class="hero">
-    <v-parallax src="@/assets/hero.jpeg" height="600">
+    <v-parallax v-bind:src="require('@/assets/background.png')" height="600">
         <v-layout
         column
         align-center
@@ -8,8 +8,8 @@
         class="white--text"
         >
         <img src="@/assets/vuetify.png" alt="Vuetify.js" height="200">
-        <h1 class="white--text mb-2 display-1 text-xs-center">Parallax Template</h1>
-        <div class="subheading mb-3 text-xs-center">Powered by Vuetify</div>
+        <h1 class="white--text mb-2 display-1 text-xs-center">Dbox</h1>
+        <div class="subheading mb-3 text-xs-center">Dbox is an open source library that makes predefined and dynamic charts with the power of @d3js_org.</div>
         <v-btn
             class="blue lighten-2 mt-5"
             dark
